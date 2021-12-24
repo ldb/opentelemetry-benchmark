@@ -1,3 +1,6 @@
+benchmark.config
+privatekey.pem
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,terraform,jetbrains+all,macos,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=goland,go,terraform,jetbrains+all,macos,linux
