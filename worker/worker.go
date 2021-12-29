@@ -17,6 +17,10 @@ const (
 	stopped
 )
 
+type Logger interface {
+	Println(m ...interface{})
+}
+
 type Worker struct {
 	ID          int
 	TraceDepth  int
@@ -26,7 +30,7 @@ type Worker struct {
 
 	Tracer      trace.Tracer
 	FinishTrace <-chan struct{} // Manager notifies the worker on this channel that it can stop recording the current trace
-	Log         chan<- string   // Logs are sent here.
+	Logger      Logger
 
 	Timeout time.Duration
 
@@ -66,7 +70,7 @@ func (w *Worker) Run(ctx context.Context) error {
 
 // log sends a log message of the recorded timings into the (*Worker).Log channel.
 func (w *Worker) log(s status) {
-	l := fmt.Sprintf("%d %d %d %d %d %d %d %d %d %d",
+	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d %d",
 		w.ID,
 		int(s),
 		w.TraceDepth,
@@ -77,11 +81,9 @@ func (w *Worker) log(s status) {
 		w.sendT.UnixMilli(),
 		w.finishT.UnixMilli(),
 		w.finishT.Sub(w.sendT).Milliseconds(),
-	)
-
-	w.Log <- l
+	))
 }
 
 func (w *Worker) generateSpans() {
-
+	time.Sleep(1 * time.Second)
 }
