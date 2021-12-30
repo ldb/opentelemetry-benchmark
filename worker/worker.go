@@ -43,6 +43,7 @@ type Worker struct {
 }
 
 func (w *Worker) Run(ctx context.Context) error {
+
 	w.log(started)
 	//timeoutTimer := time.NewTimer(w.Timeout)
 	//defer timeoutTimer.Stop()
@@ -91,5 +92,7 @@ func (w *Worker) log(s status) {
 }
 
 func (w *Worker) generateSpans() {
+	_, span := w.Tracer.Start(context.Background(), "generate")
 	time.Sleep(1 * time.Second)
+	span.End()
 }

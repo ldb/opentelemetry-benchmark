@@ -1,0 +1,23 @@
+receivers:
+  otlp/testing:
+    protocols:
+      grpc:
+        endpoint: "localhost:4318" # POST to localhost:4318/v1/traces
+
+
+processors:
+
+exporters:
+  otlphttp/testing:
+    endpoint: http://localhost:7666/v1/traces # This is where `benchd` listens
+
+extensions:
+
+service:
+  extensions: []
+  pipelines:
+    traces:
+      receivers: [otlp/testing]
+      processors: []
+      exporters: [otlphttp/testing]
+      

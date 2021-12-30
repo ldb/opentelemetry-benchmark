@@ -3,11 +3,13 @@ package worker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"sync"
 
 	"github.com/ldb/openetelemtry-benchmark/config"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,7 +29,7 @@ type Manager struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	config         config.WorkerConfig
-	tracerProvider trace.TracerProvider
+	TracerProvider trace.TracerProvider
 	workers        map[int]*Worker
 	logger         Logger
 	stopped        bool
@@ -42,7 +44,6 @@ func NewManager(name string, config config.WorkerConfig) *Manager {
 	m.ctx = ctx
 	m.cancel = cancel
 	m.config = config
-	m.tracerProvider = trace.NewNoopTracerProvider() //TODO: replace with actual provider
 	m.workers = make(map[int]*Worker)
 
 	m.logger = log.New(os.Stdout, "M ", log.Ltime|log.Lmicroseconds|log.LUTC)
@@ -62,7 +63,10 @@ func (m *Manager) AddWorkers(n int) error {
 		w.SpanLength = m.config.SpanLength
 		w.MaxCoolDown = m.config.MaxCoolDown
 
-		w.Tracer = m.tracerProvider.Tracer(instrumentationName)
+		w.Tracer = otel.Tracer(fmt.Sprintf("%s-%d", m.name, i))
+		if m.TracerProvider != nil {
+			w.Tracer = m.TracerProvider.Tracer(fmt.Sprintf("%s-%d", m.name, i))
+		}
 
 		w.Logger = log.New(os.Stdout, "W ", log.Ltime|log.Lmicroseconds|log.LUTC)
 
