@@ -3,14 +3,9 @@ package worker
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/ldb/openetelemtry-benchmark/config"
 	"log"
 	"os"
-	"sync"
-
-	"github.com/ldb/openetelemtry-benchmark/config"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const instrumentationName = "otel-benchmark"
@@ -23,16 +18,14 @@ var ErrWorkerManagerStopped = errors.New("manager stopped")
 // A stopped Manager can not be reused.
 // Managers can be named. Their name reflects in collected worker metrics.
 type Manager struct {
-	name           string
-	nWorkers       int
-	mx             sync.Mutex
-	ctx            context.Context
-	cancel         context.CancelFunc
-	config         config.WorkerConfig
-	TracerProvider trace.TracerProvider
-	workers        map[int]*Worker
-	logger         Logger
-	stopped        bool
+	name     string
+	nWorkers int
+	ctx      context.Context
+	cancel   context.CancelFunc
+	config   config.WorkerConfig
+	workers  []*Worker
+	logger   Logger
+	stopped  bool
 }
 
 // NewManager creates a new Manager based on a config.WorkerConfig.
@@ -44,43 +37,43 @@ func NewManager(name string, config config.WorkerConfig) *Manager {
 	m.ctx = ctx
 	m.cancel = cancel
 	m.config = config
-	m.workers = make(map[int]*Worker)
+	m.workers = make([]*Worker, 0)
 
 	m.logger = log.New(os.Stdout, "M ", log.Ltime|log.Lmicroseconds|log.LUTC)
 
 	return m
 }
 
-// AddWorkers adds n workers to the current pool of workers. Workers can be added at rutime.
+// AddWorkers adds n workers to the current pool of workers. Workers can be added at runtime.
 func (m *Manager) AddWorkers(n int) error {
-	for i := 1; i <= n; i++ {
-		w := new(Worker)
+	for i := 0; i < n; i++ {
+		w := m.newWorker(m.nWorkers)
 
-		w.managerName = m.name
-		w.ID = m.nWorkers + 1
-		w.TraceDepth = m.config.TraceDepth
-		w.NumberSpans = m.config.NumberSpans
-		w.SpanLength = m.config.SpanLength
-		w.MaxCoolDown = m.config.MaxCoolDown
-
-		w.Tracer = otel.Tracer(fmt.Sprintf("%s-%d", m.name, i))
-		if m.TracerProvider != nil {
-			w.Tracer = m.TracerProvider.Tracer(fmt.Sprintf("%s-%d", m.name, i))
-		}
-
-		w.Logger = log.New(os.Stdout, "W ", log.Ltime|log.Lmicroseconds|log.LUTC)
-
-		ch := make(chan struct{}, 1)
-		w.FinishTrace = ch
-
-		m.mx.Lock()
 		m.nWorkers++
-		m.workers[w.ID] = w
-		m.mx.Unlock()
+		m.workers = append(m.workers, w)
 		activeWorkers.WithLabelValues(m.name).Inc()
 	}
 
 	return nil
+}
+
+func (m *Manager) newWorker(id int) *Worker {
+	w := new(Worker)
+
+	w.managerName = m.name
+	w.ID = id
+	w.TraceDepth = m.config.TraceDepth
+	w.NumberSpans = m.config.NumberSpans
+	w.SpanLength = m.config.SpanLength
+	w.MaxCoolDown = m.config.MaxCoolDown
+
+	w.initTracer()
+
+	w.Logger = log.New(os.Stdout, "W ", log.Ltime|log.Lmicroseconds|log.LUTC)
+
+	ch := make(chan struct{}, 1)
+	w.FinishTrace = ch
+	return w
 }
 
 // startAndWatch is a simple wrapper that restarts a worker should it exit for any reason other than being canceled.
@@ -109,16 +102,11 @@ func (m *Manager) Stop() {
 }
 
 // FinishTrace notifies the worker with ID id that a trace was received so that it can stop it's timer.
-// It returns ErrWorkerNotFound if the worker has exited already.
 // It returns ErrWorkerManagerStopped if the manager itself has stopped.
 func (m *Manager) FinishTrace(id int) error {
 	if m.stopped {
 		return ErrWorkerManagerStopped
 	}
-	w, ok := m.workers[id]
-	if !ok {
-		return ErrWorkerNotFound
-	}
-	w.FinishTrace <- struct{}{}
+	m.workers[id].FinishTrace <- struct{}{}
 	return nil
 }

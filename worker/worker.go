@@ -3,6 +3,11 @@ package worker
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"log"
 	"math/rand"
 	"time"
 
@@ -30,9 +35,10 @@ type Worker struct {
 	SpanLength  time.Duration
 	MaxCoolDown time.Duration
 
-	Tracer      trace.Tracer
-	FinishTrace chan struct{} // Manager notifies the worker on this channel that it can stop recording the current trace
-	Logger      Logger
+	tracer         trace.Tracer
+	tracerProvider *sdktrace.TracerProvider
+	FinishTrace    chan struct{} // Manager notifies the worker on this channel that it can stop recording the current trace
+	Logger         Logger
 
 	Timeout time.Duration
 
@@ -40,6 +46,35 @@ type Worker struct {
 	sendT       time.Time
 	finishT     time.Time
 	sentFinishD time.Duration
+}
+
+func (w *Worker) initTracer() {
+	exporter := otlptracegrpc.NewUnstarted(
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint("otel-collector:4317"),
+	)
+	log.Println("created exporter")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	err := exporter.Start(ctx)
+	if err != nil {
+		log.Fatalf("setup exporter: %v", err.Error())
+	}
+	log.Println("started exporter")
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(fmt.Sprintf("benchd-worker.%s.%d", w.managerName, w.ID)),
+		),
+	)
+	if err != nil {
+		log.Fatalf("create resource: %v", err.Error())
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(res),
+		sdktrace.WithBatcher(exporter),
+	)
+	w.tracer = tp.Tracer("")
+	w.tracerProvider = tp
 }
 
 func (w *Worker) Run(ctx context.Context) error {
@@ -50,8 +85,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	for {
 		w.startT = time.Now()
 		w.generateSpans()
-		// flush spans
-		// send spans
+		w.tracerProvider.ForceFlush(context.Background())
 		w.sendT = time.Now()
 		tracesSent.WithLabelValues(w.managerName).Inc()
 		//	timeoutTimer.Reset()
@@ -92,7 +126,8 @@ func (w *Worker) log(s status) {
 }
 
 func (w *Worker) generateSpans() {
-	_, span := w.Tracer.Start(context.Background(), "generate")
+	_, span := w.tracer.Start(context.Background(), "generate")
 	time.Sleep(1 * time.Second)
 	span.End()
+
 }
