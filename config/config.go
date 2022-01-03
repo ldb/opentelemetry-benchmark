@@ -10,10 +10,10 @@ type BenchConfig struct {
 }
 
 type WorkerConfig struct {
-	TraceDepth  int           `json:"traceDepth" yaml:"traceDepth"`   // How deeply the generate spans should be nested.
-	NumberSpans int           `json:"numberSpans" yaml:"numberSpans"` // How many simultanous spans to generate per trace.
-	SpanLength  time.Duration `json:"spanLength" yaml:"spanLength"`
-	MaxCoolDown time.Duration `json:"maxCoolDown" yaml:"maxCoolDown"` // Maximum random cooldown between requests.
+	MaxTraceDepth  int           `json:"maxTraceDepth" yaml:"maxTraceDepth"`   // How deeply the generate spans should be nested.
+	MaxNumberSpans int           `json:"maxNumberSpans" yaml:"maxNumberSpans"` // How many simultanous spans to generate per trace.
+	MaxSpanLength  time.Duration `json:"maxSpanLength" yaml:"maxSpanLength"`
+	MaxCoolDown    time.Duration `json:"maxCoolDown" yaml:"maxCoolDown"` // Maximum random cooldown between requests.
 }
 
 type BenchmarkStep struct {

@@ -8,9 +8,6 @@ import (
 	"os"
 )
 
-const instrumentationName = "otel-benchmark"
-
-var ErrWorkerNotFound = errors.New("worker not found")
 var ErrWorkerManagerStopped = errors.New("manager stopped")
 
 // Manager manages a number of workers based on a config.WorkerConfig. New workers can be added during runtime.
@@ -62,10 +59,7 @@ func (m *Manager) newWorker(id int) *Worker {
 
 	w.managerName = m.name
 	w.ID = id
-	w.TraceDepth = m.config.TraceDepth
-	w.NumberSpans = m.config.NumberSpans
-	w.SpanLength = m.config.SpanLength
-	w.MaxCoolDown = m.config.MaxCoolDown
+	w.Config = m.config
 
 	w.initTracer()
 

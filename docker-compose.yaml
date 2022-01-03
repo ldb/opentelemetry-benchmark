@@ -14,3 +14,5 @@ services:
 
   benchd:
     build: .
+    ports:
+      - "2112:2112"

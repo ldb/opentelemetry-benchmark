@@ -3,6 +3,8 @@ package worker
 import (
 	"context"
 	"fmt"
+	"github.com/ldb/openetelemtry-benchmark/config"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -30,10 +32,8 @@ type Logger interface {
 type Worker struct {
 	managerName string
 	ID          int
-	TraceDepth  int
-	NumberSpans int
-	SpanLength  time.Duration
-	MaxCoolDown time.Duration
+
+	Config config.WorkerConfig
 
 	tracer         trace.Tracer
 	tracerProvider *sdktrace.TracerProvider
@@ -42,10 +42,14 @@ type Worker struct {
 
 	Timeout time.Duration
 
-	startT      time.Time
-	sendT       time.Time
-	finishT     time.Time
-	sentFinishD time.Duration
+	// recorded Values
+	traceDepth    int
+	spanLength    time.Duration
+	coolDown      time.Duration
+	startT        time.Time
+	sendT         time.Time
+	receiveT      time.Time
+	sentReceivedD time.Duration
 }
 
 func (w *Worker) initTracer() {
@@ -53,13 +57,11 @@ func (w *Worker) initTracer() {
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint("otel-collector:4317"),
 	)
-	log.Println("created exporter")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	err := exporter.Start(ctx)
 	if err != nil {
 		log.Fatalf("setup exporter: %v", err.Error())
 	}
-	log.Println("started exporter")
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(fmt.Sprintf("benchd-worker.%s.%d", w.managerName, w.ID)),
@@ -84,7 +86,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	//defer timeoutTimer.Stop()
 	for {
 		w.startT = time.Now()
-		w.generateSpans()
+		w.generateTrace()
 		w.tracerProvider.ForceFlush(context.Background())
 		w.sendT = time.Now()
 		tracesSent.WithLabelValues(w.managerName).Inc()
@@ -95,12 +97,15 @@ func (w *Worker) Run(ctx context.Context) error {
 			return ctx.Err()
 
 		case <-w.FinishTrace:
-			w.finishT = time.Now()
-			w.sentFinishD = w.finishT.Sub(w.sendT)
+			w.receiveT = time.Now()
+			w.sentReceivedD = w.receiveT.Sub(w.sendT)
 			//	timeoutTimer.Stop()
+			cooldown := time.Duration(rand.Int63n(w.Config.MaxCoolDown.Milliseconds())) * time.Millisecond
+			w.coolDown = cooldown
 			w.log(success)
-			traceRoundtrip.WithLabelValues(w.managerName).Observe(w.sentFinishD.Seconds())
-			time.Sleep(time.Duration(rand.Int63n(w.MaxCoolDown.Milliseconds())))
+			traceRoundtrip.WithLabelValues(w.managerName).Observe(w.sentReceivedD.Seconds())
+			time.Sleep(cooldown)
+			w.reset()
 
 			//case <-timeoutTimer.C:
 			//	w.log(timeout)
@@ -110,24 +115,54 @@ func (w *Worker) Run(ctx context.Context) error {
 
 // log sends a log message of the recorded timings into the (*Worker).Log channel.
 func (w *Worker) log(s status) {
-	w.Logger.Println(fmt.Sprintf("%s %d %d %d %d %d %d %d %d %d %d",
+	w.Logger.Println(fmt.Sprintf("%s %d %d %d %d %d %d %d %d %d",
 		w.managerName,
 		w.ID,
 		int(s),
-		w.TraceDepth,
-		w.NumberSpans,
-		w.SpanLength.Milliseconds(),
-		w.MaxCoolDown.Milliseconds(),
+		w.traceDepth,
+		w.spanLength.Milliseconds(),
+		w.coolDown.Milliseconds(),
 		w.startT.UnixMilli(),
 		w.sendT.UnixMilli(),
-		w.finishT.UnixMilli(),
-		w.sentFinishD.Milliseconds(),
+		w.receiveT.UnixMilli(),
+		w.sentReceivedD.Milliseconds(),
 	))
 }
 
-func (w *Worker) generateSpans() {
-	_, span := w.tracer.Start(context.Background(), "generate")
-	time.Sleep(1 * time.Second)
-	span.End()
+func (w *Worker) generateTrace() {
+	d := rand.Intn(w.Config.MaxTraceDepth)
+	w.traceDepth = d
+	ctx, trace := w.tracer.Start(context.Background(), "parentTrace")
+	w.child(ctx, d)
+	trace.End()
+}
 
+func (w *Worker) child(ctx context.Context, depth int) {
+	cctx, sp := w.tracer.Start(ctx, fmt.Sprintf("worker.%d.child.%d", w.ID, depth))
+	sl := time.Duration(rand.Int63n(w.Config.MaxSpanLength.Milliseconds())) * time.Millisecond
+	w.spanLength += sl
+	time.Sleep(sl)
+	defer sp.End()
+	if depth > 1 {
+		sp.SetAttributes(attribute.Bool("hasChildren", true))
+		sp.AddEvent("spawning child", trace.WithAttributes(attribute.Int("depth", depth)))
+		w.child(cctx, depth-1)
+	}
+	/*sp.SetStatus(codes.Ok, "all good")
+	if rand.Intn(100) < 30 {
+		sp.SetStatus(codes.Ok, "all good")
+	} else {
+		sp.SetStatus(codes.Error, "something went wrong")
+	}
+	sp.AddEvent("stopping")*/
+}
+
+func (w *Worker) reset() {
+	w.traceDepth = 0
+	w.spanLength = 0
+	w.coolDown = 0
+	w.startT = time.Time{}
+	w.sendT = time.Time{}
+	w.receiveT = time.Time{}
+	w.sentReceivedD = 0
 }
