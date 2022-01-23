@@ -20,38 +20,46 @@ type Manager struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	config   config.WorkerConfig
-	workers  []*Worker
-	logger   Logger
-	stopped  bool
+	// workers tracks active Workers.
+	workers []*Worker
+	// newWorkers is a list of newly added Workers that are not yet started.
+	newWorkers []*Worker
+	receiver   *receiver
+	logger     Logger
+	stopped    bool
 }
 
 // NewManager creates a new Manager based on a config.WorkerConfig.
-func NewManager(name string, config config.WorkerConfig) *Manager {
+func NewManager(name string) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	m := new(Manager)
 	m.name = name
 	m.ctx = ctx
 	m.cancel = cancel
-	m.config = config
 	m.workers = make([]*Worker, 0)
+	m.newWorkers = make([]*Worker, 0)
 
 	m.logger = log.New(os.Stdout, "M ", log.Ltime|log.Lmicroseconds|log.LUTC)
 
 	return m
 }
 
+func (m *Manager) Configure(config config.WorkerConfig) {
+	m.config = config
+	m.receiver = &receiver{Host: m.config.ReceiverAddress}
+}
+
 // AddWorkers adds n workers to the current pool of workers. Workers can be added at runtime.
-func (m *Manager) AddWorkers(n int) error {
+func (m *Manager) AddWorkers(n int) {
 	for i := 0; i < n; i++ {
 		w := m.newWorker(m.nWorkers)
 
 		m.nWorkers++
-		m.workers = append(m.workers, w)
+		m.newWorkers = append(m.newWorkers, w)
 		activeWorkers.WithLabelValues(m.name).Inc()
 	}
-
-	return nil
+	m.logger.Println("AddWorkers", n, m.nWorkers)
 }
 
 func (m *Manager) newWorker(id int) *Worker {
@@ -84,20 +92,28 @@ func (m *Manager) startAndWatch(ctx context.Context, w *Worker) {
 // Start runs all added workers concurrently.
 // In case of any failure a worker is restarted indefinitely until formally canceled via its context.
 func (m *Manager) Start() {
-	for _, w := range m.workers {
+	go func() {
+		if err := m.receiver.ReceiveTraces(m.finishTrace); err != nil {
+			m.logger.Println("error receiving traces: %v", err)
+		}
+	}()
+	for _, w := range m.newWorkers {
 		go m.startAndWatch(m.ctx, w)
+		m.workers = append(m.workers, w)
 	}
+	// After all m.newWorkers are added to m.workers, we reset m.newWorkers.
+	m.newWorkers = make([]*Worker, 0)
 }
 
-// Stop stops the manager and all its workers. A stopped manager can not be used again.
+// Stop stops the manager and all its workers. A stopped manager cannot be reused.
 func (m *Manager) Stop() {
 	m.cancel()
 	m.stopped = true
 }
 
-// FinishTrace notifies the worker with ID id that a trace was received so that it can stop it's timer.
+// finishTrace notifies the worker with ID id that a trace was received so that it can stop it's timer.
 // It returns ErrWorkerManagerStopped if the manager itself has stopped.
-func (m *Manager) FinishTrace(id int) error {
+func (m *Manager) finishTrace(id int) error {
 	if m.stopped {
 		return ErrWorkerManagerStopped
 	}

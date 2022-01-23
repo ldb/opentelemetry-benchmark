@@ -1,4 +1,4 @@
-package main
+package worker
 
 import (
 	"bytes"
@@ -15,24 +15,20 @@ import (
 // receiver is an HTTP server that accepts spans from the Openetelemetry Collector.
 // It discards the spans, parses the `service.name` attribute and notifies workers about received traces.
 type receiver struct {
-	Name    string
-	Address string
-	um      pdata.TracesUnmarshaler
-}
-
-var once sync.Once
-
-func (r *receiver) initialize() {
-	r.um = otlp.NewProtobufTracesUnmarshaler()
+	Host string
+	um   pdata.TracesUnmarshaler
+	init sync.Once
 }
 
 func (r *receiver) ReceiveTraces(notify func(int) error) error {
-	once.Do(r.initialize)
+	r.init.Do(func() {
+		r.um = otlp.NewProtobufTracesUnmarshaler()
+	})
 
 	if notify == nil {
 		return errors.New("notify must not be nil")
 	}
-	return http.ListenAndServe(r.Address, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	return http.ListenAndServe(r.Host, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		body := bytes.Buffer{}
 
 		_, err := body.ReadFrom(request.Body)
