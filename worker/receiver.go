@@ -2,6 +2,7 @@ package worker
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"go.opentelemetry.io/collector/model/otlp"
 	"go.opentelemetry.io/collector/model/pdata"
@@ -20,15 +21,16 @@ type receiver struct {
 	init sync.Once
 }
 
-func (r *receiver) ReceiveTraces(notify func(int) error) error {
+func (r *receiver) ReceiveTraces(notify func(int) error) (func(ctx context.Context) error, func() error) {
 	r.init.Do(func() {
 		r.um = otlp.NewProtobufTracesUnmarshaler()
 	})
 
 	if notify == nil {
-		return errors.New("notify must not be nil")
+		return nil, func() error { return errors.New("notify must not be nil") }
 	}
-	return http.ListenAndServe(r.Host, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+	var handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		body := bytes.Buffer{}
 
 		_, err := body.ReadFrom(request.Body)
@@ -73,5 +75,8 @@ func (r *receiver) ReceiveTraces(notify func(int) error) error {
 			}
 		}
 		writer.WriteHeader(http.StatusOK)
-	}))
+	})
+
+	server := &http.Server{Addr: r.Host, Handler: handler}
+	return server.Shutdown, server.ListenAndServe
 }

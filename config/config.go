@@ -8,14 +8,13 @@ import (
 
 // BenchConfig describes the configuration for a Benchmark run.
 type BenchConfig struct {
-	StartTime time.Time `json:"startTime" yaml:"startTime"`
-	Target    string    `json:"target" yaml:"target"`
-
+	StartTime    time.Time       `json:"startTime" yaml:"startTime"`
 	WorkerConfig WorkerConfig    `json:"workerConfig" yaml:"workerConfig"`
 	Steps        []BenchmarkStep `json:"steps" yaml:"steps"`
 }
 
 type WorkerConfig struct {
+	Target          string   `json:"target" yaml:"target"`
 	ReceiverAddress string   `json:"receiverAddress" yaml:"receiverAddress"`
 	MaxTraceDepth   int      `json:"maxTraceDepth" yaml:"maxTraceDepth"`   // How deeply the generate spans should be nested.
 	MaxNumberSpans  int      `json:"maxNumberSpans" yaml:"maxNumberSpans"` // How many simultanous spans to generate per trace.

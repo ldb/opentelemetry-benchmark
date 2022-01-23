@@ -1,7 +1,7 @@
 {
   "startTime": "0001-01-01T00:00:00Z",
-  "target": "otel-collector:4317",
   "workerConfig": {
+    "target": "otel-collector:4317",
     "receiverAddress": ":2113",
     "maxTraceDepth": 1,
     "maxNumberSpans": 1,
@@ -12,6 +12,10 @@
     {
       "duration" : "10s",
       "numberWorkers": 1
+    },
+    {
+      "duration" : "10s",
+      "numberWorkers": 100
     }
   ]
 }

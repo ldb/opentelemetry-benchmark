@@ -1,3 +1,3 @@
-- pass target from config to workermanager
-- extend workermanager logs such that it logs the benchmark name
-- make sure a stopped manager cannot be reused
+- implement tracing timeouts
+- implement starting at a set time
+(- implement rate of worker creation)

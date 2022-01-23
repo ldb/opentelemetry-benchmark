@@ -6,7 +6,7 @@ receivers:
 
 exporters:
   otlphttp:
-    endpoint: http://benchd:7666/v1/traces # This is where `benchd` listens
+    endpoint: http://benchd:2113/v1/traces # This is where `benchd` listens
 
 service:
   extensions: []

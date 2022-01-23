@@ -23,6 +23,9 @@ func (b *Benchmark) Start() error {
 	if b.Config == nil {
 		return errors.New("not configured")
 	}
+	if b.status != "" {
+		return errors.New("already running or stopped")
+	}
 	b.workerManager = worker.NewManager(b.Name)
 	b.workerManager.Configure(b.Config.WorkerConfig)
 	b.workerManager.Start()
@@ -39,6 +42,9 @@ func (b *Benchmark) Start() error {
 func (b *Benchmark) Stop() error {
 	b.m.Lock()
 	defer b.m.Unlock()
+	if b.status != "running" {
+		return errors.New("not running")
+	}
 	b.workerManager.Stop()
 	b.status = "stopped"
 	return nil
@@ -47,5 +53,8 @@ func (b *Benchmark) Stop() error {
 func (b *Benchmark) Status() string {
 	b.m.RLock()
 	defer b.m.RUnlock()
+	if b.status == "" {
+		return "uninitialized"
+	}
 	return b.status
 }

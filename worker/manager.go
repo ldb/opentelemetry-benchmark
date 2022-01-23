@@ -6,6 +6,7 @@ import (
 	"github.com/ldb/openetelemtry-benchmark/config"
 	"log"
 	"os"
+	"time"
 )
 
 var ErrWorkerManagerStopped = errors.New("manager stopped")
@@ -23,10 +24,11 @@ type Manager struct {
 	// workers tracks active Workers.
 	workers []*Worker
 	// newWorkers is a list of newly added Workers that are not yet started.
-	newWorkers []*Worker
-	receiver   *receiver
-	logger     Logger
-	stopped    bool
+	newWorkers           []*Worker
+	receiver             *receiver
+	receiverShutdownFunc func(ctx context.Context) error
+	logger               Logger
+	stopped              bool
 }
 
 // NewManager creates a new Manager based on a config.WorkerConfig.
@@ -40,7 +42,7 @@ func NewManager(name string) *Manager {
 	m.workers = make([]*Worker, 0)
 	m.newWorkers = make([]*Worker, 0)
 
-	m.logger = log.New(os.Stdout, "M ", log.Ltime|log.Lmicroseconds|log.LUTC)
+	m.logger = log.New(os.Stdout, "M "+name+" ", log.Ltime|log.Lmicroseconds|log.LUTC)
 
 	return m
 }
@@ -60,19 +62,22 @@ func (m *Manager) AddWorkers(n int) {
 		activeWorkers.WithLabelValues(m.name).Inc()
 	}
 	m.logger.Println("AddWorkers", n, m.nWorkers)
+	// We add all workers before starting them to make sure they are all properly initialized.
+	for _, w := range m.newWorkers {
+		go m.startAndWatch(m.ctx, w)
+		m.workers = append(m.workers, w)
+	}
+	// After all m.newWorkers are added to m.workers, we reset m.newWorkers.
+	m.newWorkers = make([]*Worker, 0)
 }
 
 func (m *Manager) newWorker(id int) *Worker {
 	w := new(Worker)
-
 	w.managerName = m.name
 	w.ID = id
 	w.Config = m.config
-
-	w.initTracer()
-
-	w.Logger = log.New(os.Stdout, "W ", log.Ltime|log.Lmicroseconds|log.LUTC)
-
+	w.initTracer(w.Config.Target)
+	w.Logger = log.New(os.Stdout, "W "+m.name+" ", log.Ltime|log.Lmicroseconds|log.LUTC)
 	ch := make(chan struct{}, 1)
 	w.FinishTrace = ch
 	return w
@@ -92,22 +97,24 @@ func (m *Manager) startAndWatch(ctx context.Context, w *Worker) {
 // Start runs all added workers concurrently.
 // In case of any failure a worker is restarted indefinitely until formally canceled via its context.
 func (m *Manager) Start() {
+	if m.stopped {
+		return
+	}
 	go func() {
-		if err := m.receiver.ReceiveTraces(m.finishTrace); err != nil {
-			m.logger.Println("error receiving traces: %v", err)
+		shutdown, listenAndServe := m.receiver.ReceiveTraces(m.finishTrace)
+		m.receiverShutdownFunc = shutdown
+		if err := listenAndServe(); err != nil {
+			m.logger.Printf("error receiving traces: %v", err)
 		}
 	}()
-	for _, w := range m.newWorkers {
-		go m.startAndWatch(m.ctx, w)
-		m.workers = append(m.workers, w)
-	}
-	// After all m.newWorkers are added to m.workers, we reset m.newWorkers.
-	m.newWorkers = make([]*Worker, 0)
 }
 
 // Stop stops the manager and all its workers. A stopped manager cannot be reused.
 func (m *Manager) Stop() {
 	m.cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	m.receiverShutdownFunc(ctx)
 	m.stopped = true
 }
 

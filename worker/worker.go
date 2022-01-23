@@ -27,6 +27,7 @@ const (
 
 type Logger interface {
 	Println(m ...interface{})
+	Printf(format string, v ...interface{})
 }
 
 type Worker struct {
@@ -52,12 +53,13 @@ type Worker struct {
 	sentReceivedD time.Duration
 }
 
-func (w *Worker) initTracer() {
+func (w *Worker) initTracer(target string) {
 	exporter := otlptracegrpc.NewUnstarted(
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint("otel-collector:4317"),
+		otlptracegrpc.WithEndpoint(target),
 	)
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	err := exporter.Start(ctx)
 	if err != nil {
 		log.Fatalf("setup exporter: %v", err.Error())
@@ -87,7 +89,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	for {
 		w.startT = time.Now()
 		w.generateTrace()
-		w.tracerProvider.ForceFlush(context.Background())
+		w.tracerProvider.ForceFlush(ctx)
 		w.sendT = time.Now()
 		tracesSent.WithLabelValues(w.managerName).Inc()
 		//	timeoutTimer.Reset()
@@ -115,8 +117,7 @@ func (w *Worker) Run(ctx context.Context) error {
 
 // log sends a log message of the recorded timings into the (*Worker).Log channel.
 func (w *Worker) log(s status) {
-	w.Logger.Println(fmt.Sprintf("%s %d %d %d %d %d %d %d %d %d",
-		w.managerName,
+	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d",
 		w.ID,
 		int(s),
 		w.traceDepth,

@@ -121,6 +121,7 @@ func (c *cmdServer) startHandler() http.HandlerFunc {
 		}
 		if err := b.Start(); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		log.Println("# started benchmark", benchmarkName)
 	}
@@ -146,8 +147,10 @@ func (c *cmdServer) stopHandler() http.HandlerFunc {
 		}
 		if err := b.Stop(); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		log.Println("# stopped benchmark", benchmarkName)
+		delete(c.benchmarks, benchmarkName)
+		log.Println("# stopped benchmark", benchmarkName, c.benchmarks)
 	}
 }
 
