@@ -1,3 +1,7 @@
+# This file can be used to spin up a local development environment for openteleemtry-benchmark.
+# It automatically compiles `benchd`, the benchmarking client.
+# To force a recompilation, run `docker-compose up --build`.
+
 version: "2"
 services:
   otel-collector:

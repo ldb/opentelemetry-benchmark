@@ -6,16 +6,13 @@
     "maxTraceDepth": 1,
     "maxNumberSpans": 1,
     "maxSpanLength": "1s",
-    "maxCoolDown": "1s"
+    "maxCoolDown": "1s",
+    "timeout": "1s"
   },
   "steps": [
     {
       "duration" : "10s",
       "numberWorkers": 1
-    },
-    {
-      "duration" : "10s",
-      "numberWorkers": 100
     }
   ]
 }

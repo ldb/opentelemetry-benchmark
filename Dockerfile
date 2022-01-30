@@ -8,6 +8,6 @@ RUN go mod download
 COPY . .
 RUN go build -o /out/benchd cmd/benchd/*.go
 
-FROM scratch
+FROM alpine
 COPY --from=build /out/benchd /
 CMD ["/benchd"]

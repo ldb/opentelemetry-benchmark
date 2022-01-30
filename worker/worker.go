@@ -19,10 +19,10 @@ import (
 type status int
 
 const (
-	success status = iota
-	timeout
-	started
-	stopped
+	statusSuccess status = iota
+	statusTimeout
+	statusInitialized
+	statusStopped
 )
 
 type Logger interface {
@@ -40,8 +40,6 @@ type Worker struct {
 	tracerProvider *sdktrace.TracerProvider
 	FinishTrace    chan struct{} // Manager notifies the worker on this channel that it can stop recording the current trace
 	Logger         Logger
-
-	Timeout time.Duration
 
 	// recorded Values
 	traceDepth    int
@@ -77,45 +75,54 @@ func (w *Worker) initTracer(target string) {
 		sdktrace.WithResource(res),
 		sdktrace.WithBatcher(exporter),
 	)
-	w.tracer = tp.Tracer("")
+	w.tracer = tp.Tracer(fmt.Sprintf("M:%s-W:%d", w.managerName, w.ID))
 	w.tracerProvider = tp
+	w.log(statusInitialized)
 }
 
 func (w *Worker) Run(ctx context.Context) error {
-
-	w.log(started)
-	//timeoutTimer := time.NewTimer(w.Timeout)
-	//defer timeoutTimer.Stop()
 	for {
-		w.startT = time.Now()
-		w.generateTrace()
-		w.tracerProvider.ForceFlush(ctx)
-		w.sendT = time.Now()
-		tracesSent.WithLabelValues(w.managerName).Inc()
-		//	timeoutTimer.Reset()
-		select {
-		case <-ctx.Done():
-			w.log(stopped)
-			return ctx.Err()
-
-		case <-w.FinishTrace:
-			w.receiveT = time.Now()
-			w.sentReceivedD = w.receiveT.Sub(w.sendT)
-			//	timeoutTimer.Stop()
-			cooldown := time.Duration(rand.Int63n(w.Config.MaxCoolDown.Milliseconds())) * time.Millisecond
-			w.coolDown = cooldown
-			w.log(success)
-			traceRoundtrip.WithLabelValues(w.managerName).Observe(w.sentReceivedD.Seconds())
-			time.Sleep(cooldown)
-			w.reset()
-
-			//case <-timeoutTimer.C:
-			//	w.log(timeout)
+		// w.run should not be inlined here as to avoid a defer loop.
+		err := w.run(ctx)
+		if err != nil {
+			return err
 		}
 	}
 }
 
-// log sends a log message of the recorded timings into the (*Worker).Log channel.
+func (w *Worker) run(ctx context.Context) error {
+	w.startT = time.Now()
+	w.generateTrace()
+	timeout, cancel := context.WithTimeout(context.Background(), w.Config.Timeout.Duration)
+	defer cancel()
+	w.sendT = time.Now()
+	w.tracerProvider.ForceFlush(timeout)
+	tracesSent.WithLabelValues(w.managerName).Inc()
+	defer w.reset()
+	select {
+	case <-ctx.Done():
+		w.log(statusStopped)
+		return ctx.Err()
+
+	case <-timeout.Done():
+		w.receiveT = time.Now()
+		w.sentReceivedD = w.receiveT.Sub(w.sendT)
+		w.log(statusTimeout)
+		return timeout.Err()
+
+	case <-w.FinishTrace:
+		w.receiveT = time.Now()
+		w.sentReceivedD = w.receiveT.Sub(w.sendT)
+		cooldown := time.Duration(rand.Int63n(w.Config.MaxCoolDown.Milliseconds())) * time.Millisecond
+		w.coolDown = cooldown
+		w.log(statusSuccess)
+		traceRoundtrip.WithLabelValues(w.managerName).Observe(w.sentReceivedD.Seconds())
+		time.Sleep(cooldown)
+	}
+	return nil
+}
+
+// log logs the last request to w.Logger.
 func (w *Worker) log(s status) {
 	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d",
 		w.ID,
@@ -149,13 +156,6 @@ func (w *Worker) child(ctx context.Context, depth int) {
 		sp.AddEvent("spawning child", trace.WithAttributes(attribute.Int("depth", depth)))
 		w.child(cctx, depth-1)
 	}
-	/*sp.SetStatus(codes.Ok, "all good")
-	if rand.Intn(100) < 30 {
-		sp.SetStatus(codes.Ok, "all good")
-	} else {
-		sp.SetStatus(codes.Error, "something went wrong")
-	}
-	sp.AddEvent("stopping")*/
 }
 
 func (w *Worker) reset() {
