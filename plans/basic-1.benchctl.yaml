@@ -1,0 +1,17 @@
+# A "basic" plan with all parameters set to 1...
+# It runs for 10 seconds, creating 1 worker every 1 second which send 1 span of max length 1 second every 1 second ...
+# You get the gist.
+# Good for testing that stuff works, but not a very heavy workload
+name: "basic-1"
+duration: 10s
+benchConfig:
+  fixedRate:
+    duration: "1s"
+    numberWorkers: 1
+  workerConfig:
+    maxCoolDown: "1s"
+    maxNumberSpans: 1
+    maxSpanLength: 1s
+    maxTraceDepth: 1
+    receiveTimeout: 1s
+    sendTimeout: 1s

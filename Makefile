@@ -7,19 +7,12 @@ all: compile provision ## Compiles binaries, generates configurations and provis
 
 .PHONY: compile
 compile: ## Compiles the binaries.
-	GOOS=linux GOARCH=amd64 go build -o benchd cmd/benchd/main.go # Compile for server
-	go build -o benchd cmd/benchctl/main.go # Compile for local
-
-.PHONY: generate
-generate: ## Generates local config files for different benchmark runs.
-	echo "todo"
+	GOOS=linux GOARCH=amd64 go build -o bin/benchd cmd/benchd/main.go # Compile for server
+	go build -o bin/benchctl cmd/benchctl/main.go # Compile for local
 
 .PHONY: provision
-provision: ## Provisions all infrastructure in Google Cloud
+provision: compile ## Provisions all infrastructure in Google Cloud
 	cd terraform; terraform init; terraform plan -out planfile; terraform apply -auto-approve planfile
-
-.PHONY: deploy
-deploy: generate ##
 
 .PHONY: local
 local: ## Spins up a local development environment.
@@ -28,4 +21,4 @@ local: ## Spins up a local development environment.
 .PHONY: clean
 clean: ## Remove build artifacts.
 	cd terraform; terraform apply -auto-approve -destroy; rm terraform.tfstate terraform.tfstate.backup; cd ..;
-	rm benchd benchctl terraform/planfile;
+	rm -rf bin;

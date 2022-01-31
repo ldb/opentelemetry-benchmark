@@ -4,6 +4,12 @@ variable "sut_machine_type" {
   default = "e2-medium"
 }
 
+variable "sut_config_file" {
+  type = string
+  description = "The config file template to provision the system under test with."
+  default = "../plans/basic-1.otel.yaml.tmpl"
+}
+
 variable "monitoring_machine_type" {
   type = string
   description = "Instance Type for monitoring instance."
@@ -18,6 +24,6 @@ variable "client_machine_type" {
 
 variable "number_clients" {
   type = number
-  description = "Number of benchmarking clients to launch."
-  default = 2
+  description = "Number of benchmarking clients to launch. At the moment, only one is supported in code."
+  default = 1
 }

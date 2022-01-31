@@ -6,7 +6,17 @@ import (
 	"time"
 )
 
-// BenchConfig describes the configuration for a Benchmark run.
+// BenchmarkPlan describes a full benchmark that should be executed by `benchctl`.
+// Notice how at the moment we only support a single client per plan, and thus, only a single benchmarking client.
+type BenchmarkPlan struct {
+	Name               string      `json:"name" yaml:"name"`
+	ClientAddress      string      `json:"clientAddress" yaml:"clientAddress"`
+	BenchConfig        BenchConfig `json:"benchConfig" yaml:"benchConfig"`
+	Duration           Duration    `json:"duration" yaml:"duration"`
+	MonitoringEndpoint string      `json:"monitoringEndpoint,omitempty" yaml:"monitoringEndpoint,omitempty"`
+}
+
+// BenchConfig describes the configuration for a Benchmark plan.
 // It can be used in two ways: FixedRate and Step.
 // In FixedRate mode, the benchmark will create new Workers at a constant rate until it is stopped.
 // In Step mode, a sequence of scaling steps is executed.

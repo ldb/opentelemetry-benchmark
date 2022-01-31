@@ -132,6 +132,31 @@ func (c *Client) StopBenchmark(name string) (benchmark.Status, error) {
 	return *status, nil
 }
 
+func (c *Client) DestroyBenchmark(name string) (benchmark.Status, error) {
+	if name == "" {
+		return benchmark.Status{}, ErrInvalidName
+	}
+	url := c.host + "/destroy/" + name
+	r, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		return benchmark.Status{}, fmt.Errorf("error creating request: %v", err)
+	}
+	res, err := c.client.Do(r)
+	if err != nil {
+		return benchmark.Status{}, fmt.Errorf("error performing request: %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return benchmark.Status{}, fmt.Errorf("error destroying Benchmark with name %s: %v", name, err)
+	}
+	status := &benchmark.Status{}
+	d := json.NewDecoder(res.Body)
+	if err := d.Decode(status); err != nil {
+		return benchmark.Status{}, fmt.Errorf("error decoding body: %v", err)
+	}
+	return *status, nil
+}
+
 func (c *Client) Status(name string) (benchmark.Status, error) {
 	if name == "" {
 		return benchmark.Status{}, ErrInvalidName

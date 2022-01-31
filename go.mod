@@ -3,6 +3,7 @@ module github.com/ldb/openetelemtry-benchmark
 go 1.17
 
 require (
+	github.com/ghodss/yaml v1.0.0
 	github.com/prometheus/client_golang v1.11.0
 	go.opentelemetry.io/collector/model v0.41.0
 	go.opentelemetry.io/otel v1.3.0
@@ -33,4 +34,5 @@ require (
 	google.golang.org/genproto v0.0.0-20210604141403-392c879c8b08 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

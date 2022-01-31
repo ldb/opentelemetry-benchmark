@@ -15,7 +15,7 @@ import (
 type Benchmark struct {
 	Name          string
 	config        *config.BenchConfig
-	status        string
+	status        State
 	workerManager *worker.Manager
 	m             sync.RWMutex
 	currentStep   int
@@ -28,14 +28,14 @@ func (b *Benchmark) Start() error {
 	b.m.Lock()
 	defer b.m.Unlock()
 	if b.config == nil {
-		b.status = "uninitialized"
+		b.status = Uninitialized
 		return errors.New("uninitialized")
 	}
-	if b.status == "running" || b.status == "stopped" {
+	if b.status == Running || b.status == Stopped {
 		return errors.New("already running or stopped")
 	}
 
-	f, err := os.CreateTemp("", "benchd-"+b.Name)
+	f, err := os.CreateTemp("", "log-benchd-plan-"+b.Name+"-*")
 	if err != nil {
 		return fmt.Errorf("error creating temporary file: %v", err)
 	}
@@ -69,10 +69,10 @@ func (b *Benchmark) Start() error {
 			b.workerManager.AddWorkers(step.NumberWorkers)
 			time.Sleep(step.Duration.Duration)
 		}
-		b.status = "finished"
+		b.status = Finished
 		return
 	}(ctx)
-	b.status = "running"
+	b.status = Running
 	return nil
 }
 
@@ -80,13 +80,13 @@ func (b *Benchmark) Configure(config *config.BenchConfig) {
 	b.m.Lock()
 	defer b.m.Unlock()
 	b.config = config
-	b.status = "configured"
+	b.status = Configured
 }
 
 func (b *Benchmark) Stop() error {
 	b.m.Lock()
 	defer b.m.Unlock()
-	if b.status != "running" && b.status != "finished" {
+	if b.status != Running && b.status != Finished {
 		return errors.New("not running")
 	}
 	b.cancel()
@@ -94,14 +94,14 @@ func (b *Benchmark) Stop() error {
 	if err := b.logFile.Close(); err != nil {
 		return fmt.Errorf("error closing log file: %v", err)
 	}
-	b.status = "stopped"
+	b.status = Stopped
 	return nil
 }
 
 func (b *Benchmark) Destroy() error {
 	b.m.Lock()
 	defer b.m.Unlock()
-	if b.status != "stopped" {
+	if b.status != Stopped {
 		if err := b.Stop(); err != nil {
 			return fmt.Errorf("error stopping benchmark: %v", err)
 		}
@@ -124,12 +124,12 @@ type Status struct {
 func (b *Benchmark) Status() Status {
 	b.m.Lock()
 	defer b.m.Unlock()
-	if b.status == "uninitialized" || b.status == "" {
-		b.status = "uninitialized"
-		return Status{State: b.status}
+	if b.status == Uninitialized || b.status == Unknown {
+		b.status = Uninitialized
+		return Status{State: b.status.String()}
 	}
 	s := Status{
-		State:        b.status,
+		State:        b.status.String(),
 		CurrentStep:  b.currentStep,
 		MaxStep:      len(b.config.Steps),
 		ManagerState: worker.Status{},

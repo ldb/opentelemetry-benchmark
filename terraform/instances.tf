@@ -34,6 +34,27 @@ resource "google_compute_instance" "otel-collector" {
   }
 
   metadata_startup_script = file("${path.module}/scripts/init-collector.sh")
+
+  provisioner "file" {
+    content     = templatefile("${path.module}/${var.sut_config_file}",{
+      client_ip = google_compute_instance.clients.0.network_interface.0.access_config.0.nat_ip
+    })
+    destination = "config.yaml"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp config.yaml /etc/otelcol/config.yaml",
+      "sudo systemctl restart otelcol",
+    ]
+  }
+
+  connection {
+    type = "ssh"
+    user = "benchmark"
+    host = self.network_interface.0.access_config.0.nat_ip
+    port = 22
+    private_key = tls_private_key.ssh_key.private_key_pem
+  }
 }
 
 resource "google_compute_instance" "clients" {
@@ -63,8 +84,29 @@ resource "google_compute_instance" "clients" {
     ssh-keys = "benchmark:${replace(tls_private_key.ssh_key.public_key_openssh, "\n", "")} benchmark"
   }
 
-
   metadata_startup_script = file("${path.module}/scripts/init-client.sh")
+
+  # Provision instance with `benchd` binary
+  provisioner "file" {
+    source      = "${path.module}/../bin/benchd"
+    destination = "benchd"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      #"sudo base64 --decode benchdb64 > benchd",
+      "sudo chmod +x benchd",
+      "sudo cp benchd /usr/local/bin/benchd",
+      "sudo systemctl restart benchd",
+    ]
+  }
+
+  connection {
+    type = "ssh"
+    user = "benchmark"
+    host = self.network_interface.0.access_config.0.nat_ip
+    port = 22
+    private_key = tls_private_key.ssh_key.private_key_pem
+  }
 }
 
 resource "google_compute_instance" "monitoring" {

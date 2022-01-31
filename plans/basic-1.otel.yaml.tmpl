@@ -1,0 +1,16 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  otlphttp:
+    endpoint: http://${client_ip}:2113/v1/traces # This is where `benchd` listens
+
+service:
+  extensions: []
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlphttp]
