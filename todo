@@ -1,1 +1,4 @@
 - implement starting at a set time
+- finish benchctl implementation
+- finish makefile
+- generate config files

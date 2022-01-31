@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cmdServer := command.Server{Host: ":2112"}
+	cmdServer := command.Server{Host: ":7666"}
 	log.Println("listening on port", cmdServer.Host)
 	if err := cmdServer.Start(); err != nil {
 		log.Fatalf("error listening: %v", err)

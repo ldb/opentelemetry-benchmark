@@ -33,10 +33,7 @@ resource "google_compute_instance" "otel-collector" {
     ssh-keys = "benchmark:${replace(tls_private_key.ssh_key.public_key_openssh, "\n", "")} benchmark"
   }
 
-  metadata_startup_script = <<EOT
-wget https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.41.0/otelcol_0.41.0_linux_amd64.deb
-sudo dpkg -i otelcol_0.41.0_linux_amd64.deb
-EOT
+  metadata_startup_script = file("${path.module}/scripts/init-collector.sh")
 }
 
 resource "google_compute_instance" "clients" {
@@ -55,7 +52,7 @@ resource "google_compute_instance" "clients" {
   }
 
   network_interface {
-    network = "default"
+    network = data.google_compute_network.benchmark_vpc.name
 
     access_config {
       // Ephemeral public IP for SSH.
@@ -67,9 +64,37 @@ resource "google_compute_instance" "clients" {
   }
 
 
-  metadata_startup_script = <<EOT
-wget https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.41.0/otelcol_0.41.0_linux_amd64.deb
-sudo dpkg -i otelcol_0.41.0_linux_amd64.deb
-EOT
+  metadata_startup_script = file("${path.module}/scripts/init-client.sh")
+}
+
+resource "google_compute_instance" "monitoring" {
+  name         = "monitoring"
+  machine_type = var.monitoring_machine_type
+  zone         = "europe-west1-b"
+
+  tags = ["ssh"]
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-9"
+    }
+  }
+
+  network_interface {
+    network = data.google_compute_network.benchmark_vpc.name
+
+    access_config {
+      // Ephemeral public IP for SSH.
+    }
+  }
+
+  metadata = {
+    ssh-keys = "benchmark:${replace(tls_private_key.ssh_key.public_key_openssh, "\n", "")} benchmark"
+  }
+
+  metadata_startup_script = templatefile("${path.module}/scripts/init-monitoring.sh.tmpl", {
+    client-addresses = google_compute_instance.clients[*].network_interface.0.network_ip,
+    collector-address = google_compute_instance.otel-collector.network_interface.0.network_ip,
+  })
 }
 

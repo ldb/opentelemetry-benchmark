@@ -4,6 +4,12 @@ variable "sut_machine_type" {
   default = "e2-medium"
 }
 
+variable "monitoring_machine_type" {
+  type = string
+  description = "Instance Type for monitoring instance."
+  default = "e2-medium"
+}
+
 variable "client_machine_type" {
   type = string
   description = "Instance Type for benchmarking clients."
@@ -13,5 +19,5 @@ variable "client_machine_type" {
 variable "number_clients" {
   type = number
   description = "Number of benchmarking clients to launch."
-  default = 1
+  default = 2
 }
