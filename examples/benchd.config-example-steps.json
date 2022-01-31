@@ -7,7 +7,8 @@
     "maxNumberSpans": 1,
     "maxSpanLength": "1s",
     "maxCoolDown": "1s",
-    "timeout": "1s"
+    "sendTimeout": "1s",
+    "receiveTimeout": "2s"
   },
   "steps": [
     {

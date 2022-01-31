@@ -19,9 +19,11 @@ import (
 type status int
 
 const (
-	statusSuccess status = iota
-	statusTimeout
-	statusInitialized
+	statusInitialized status = iota
+	statusSuccess
+	statusSendTimeout
+	statusSendError
+	statusReceiveTimeout
 	statusStopped
 )
 
@@ -85,6 +87,9 @@ func (w *Worker) Run(ctx context.Context) error {
 		// w.run should not be inlined here as to avoid a defer loop.
 		err := w.run(ctx)
 		if err != nil {
+			if err != context.Canceled {
+				workerErrors.WithLabelValues(w.managerName, err.Error()).Inc()
+			}
 			return err
 		}
 	}
@@ -93,22 +98,34 @@ func (w *Worker) Run(ctx context.Context) error {
 func (w *Worker) run(ctx context.Context) error {
 	w.startT = time.Now()
 	w.generateTrace()
-	timeout, cancel := context.WithTimeout(context.Background(), w.Config.Timeout.Duration)
-	defer cancel()
-	w.sendT = time.Now()
-	w.tracerProvider.ForceFlush(timeout)
-	tracesSent.WithLabelValues(w.managerName).Inc()
 	defer w.reset()
+	sendTimeout, cancelSend := context.WithTimeout(context.Background(), w.Config.SendTimeout.Duration)
+	defer cancelSend()
+	w.sendT = time.Now()
+	if err := w.tracerProvider.ForceFlush(sendTimeout); err != nil {
+		w.receiveT = time.Now()
+		w.sentReceivedD = w.receiveT.Sub(w.sendT)
+		if err != context.DeadlineExceeded {
+			w.log(statusSendError)
+			return err
+		}
+		w.log(statusSendTimeout)
+		return fmt.Errorf("send timeout: %w", sendTimeout.Err())
+	}
+	tracesSent.WithLabelValues(w.managerName).Inc()
+	receiveTimeout, cancelReceive := context.WithTimeout(context.Background(), w.Config.ReceiveTimeout.Duration)
+	defer cancelReceive()
 	select {
 	case <-ctx.Done():
+		activeWorkers.WithLabelValues(w.managerName).Dec()
 		w.log(statusStopped)
 		return ctx.Err()
 
-	case <-timeout.Done():
+	case <-receiveTimeout.Done():
 		w.receiveT = time.Now()
 		w.sentReceivedD = w.receiveT.Sub(w.sendT)
-		w.log(statusTimeout)
-		return timeout.Err()
+		w.log(statusReceiveTimeout)
+		return fmt.Errorf("receive timeout: %w", sendTimeout.Err())
 
 	case <-w.FinishTrace:
 		w.receiveT = time.Now()

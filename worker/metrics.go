@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	activeWorkers = promauto.NewCounterVec(prometheus.CounterOpts{
+	activeWorkers = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "benchd_manager_active_workers_count",
 		Help: "The total number of currently active workers",
 	}, []string{"name"})
@@ -15,6 +15,11 @@ var (
 		Name: "benchd_manager_traces_sent_count",
 		Help: "The total number of traces generated and sent by all workers",
 	}, []string{"name"})
+
+	workerErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "benchd_manager_worker_error_count",
+		Help: "The total number of errors that occurred in all workers",
+	}, []string{"name", "kind"})
 
 	traceRoundtrip = promauto.NewSummaryVec(prometheus.SummaryOpts{
 		Name: "benchd_worker_trace_roundtrip_duration_seconds",

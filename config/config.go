@@ -25,7 +25,8 @@ type WorkerConfig struct {
 	MaxNumberSpans  int      `json:"maxNumberSpans" yaml:"maxNumberSpans"` // How many simultanous spans to generate per trace.
 	MaxSpanLength   Duration `json:"maxSpanLength" yaml:"maxSpanLength"`
 	MaxCoolDown     Duration `json:"maxCoolDown" yaml:"maxCoolDown"` // Maximum random cooldown between requests.
-	Timeout         Duration `json:"timeout" yaml:"timeout"`
+	SendTimeout     Duration `json:"sendTimeout" yaml:"sendTimeout"`
+	ReceiveTimeout  Duration `json:"receiveTimeout" yaml:"receiveTimeout"`
 }
 
 // FixedRate represents scaling at a fixed rate of NumberWorkers per Duration.

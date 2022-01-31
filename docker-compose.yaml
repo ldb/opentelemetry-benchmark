@@ -19,4 +19,4 @@ services:
   benchd:
     build: .
     ports:
-      - "2112:2112"
+      - "7666:7666"
