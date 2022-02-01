@@ -3,7 +3,7 @@
 # You get the gist.
 # Good for testing that stuff works, but not a very heavy workload
 name: "basic-1"
-duration: 10s
+duration: 10m
 benchConfig:
   fixedRate:
     duration: "1s"

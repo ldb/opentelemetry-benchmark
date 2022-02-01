@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 const defaultHost = ":7666"
@@ -42,15 +41,11 @@ func (c *Server) Start() error {
 		mux.Handle("/destroy/", c.destroyHandler())
 
 		c.s = &http.Server{
-			Addr:         c.Host,
-			ReadTimeout:  1 * time.Second,
-			WriteTimeout: 1 * time.Second,
-			Handler:      Log(mux),
+			Addr:    c.Host,
+			Handler: Log(mux),
 		}
 	})
-
 	log.Println("starting server")
-
 	return c.s.ListenAndServe()
 }
 

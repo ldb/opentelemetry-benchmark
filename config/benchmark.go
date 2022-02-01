@@ -22,7 +22,6 @@ type BenchmarkPlan struct {
 // In Step mode, a sequence of scaling steps is executed.
 // FixedRate mode can be used to quickly find a breaking point for the system under test, which can later be closely observed in Step mode.
 type BenchConfig struct {
-	StartTime    time.Time       `json:"startTime" yaml:"startTime"`
 	WorkerConfig WorkerConfig    `json:"workerConfig" yaml:"workerConfig"`
 	FixedRate    FixedRate       `json:"fixedRate" yaml:"fixedRate"`
 	Steps        []BenchmarkStep `json:"steps" yaml:"steps"`

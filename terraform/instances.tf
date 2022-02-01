@@ -1,11 +1,11 @@
 resource "tls_private_key" "ssh_key" {
-  algorithm   = "RSA"
+  algorithm = "RSA"
 }
 
 resource "local_file" "ssh_key" {
-  filename = "../privatekey.pem"
-  sensitive_content     = tls_private_key.ssh_key.private_key_pem
-  file_permission = "400"
+  filename          = "../privatekey.pem"
+  sensitive_content = tls_private_key.ssh_key.private_key_pem
+  file_permission   = "400"
 }
 
 resource "google_compute_instance" "otel-collector" {
@@ -36,8 +36,8 @@ resource "google_compute_instance" "otel-collector" {
   metadata_startup_script = file("${path.module}/scripts/init-collector.sh")
 
   provisioner "file" {
-    content     = templatefile("${path.module}/${var.sut_config_file}",{
-      client_ip = google_compute_instance.clients.0.network_interface.0.access_config.0.nat_ip
+    content = templatefile("${path.module}/${var.sut_config_file}", {
+      client_ip = google_compute_instance.clients.0.network_interface.0.network_ip
     })
     destination = "config.yaml"
   }
@@ -49,10 +49,10 @@ resource "google_compute_instance" "otel-collector" {
   }
 
   connection {
-    type = "ssh"
-    user = "benchmark"
-    host = self.network_interface.0.access_config.0.nat_ip
-    port = 22
+    type        = "ssh"
+    user        = "benchmark"
+    host        = self.network_interface.0.access_config.0.nat_ip
+    port        = 22
     private_key = tls_private_key.ssh_key.private_key_pem
   }
 }
@@ -101,10 +101,10 @@ resource "google_compute_instance" "clients" {
   }
 
   connection {
-    type = "ssh"
-    user = "benchmark"
-    host = self.network_interface.0.access_config.0.nat_ip
-    port = 22
+    type        = "ssh"
+    user        = "benchmark"
+    host        = self.network_interface.0.access_config.0.nat_ip
+    port        = 22
     private_key = tls_private_key.ssh_key.private_key_pem
   }
 }
@@ -135,8 +135,7 @@ resource "google_compute_instance" "monitoring" {
   }
 
   metadata_startup_script = templatefile("${path.module}/scripts/init-monitoring.sh.tmpl", {
-    client-addresses = google_compute_instance.clients[*].network_interface.0.network_ip,
+    client-addresses  = google_compute_instance.clients[*].network_interface.0.network_ip,
     collector-address = google_compute_instance.otel-collector.network_interface.0.network_ip,
   })
 }
-

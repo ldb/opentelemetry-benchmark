@@ -20,3 +20,16 @@ services:
     build: .
     ports:
       - "7666:7666"
+
+  grafana:
+    image: grafana/grafana:8.1.5
+    volumes:
+      - ./terraform/grafana/datasource:/etc/grafana/provisioning/datasources
+      - ./terraform/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./terraform/grafana/dashboards/boards:/var/lib/grafana/dashboards
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - "3000:3000"
