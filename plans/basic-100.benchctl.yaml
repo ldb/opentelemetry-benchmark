@@ -1,0 +1,15 @@
+# A highly concurrent benchmark. 100 workers are being created every 10 seconds for 5 minute, sending up to a 100 spans at a depth of 10.
+# This mainly stresses file descriptor limits on both, the sending, and the receiving end.
+name: "basic-100"
+duration: 5m
+benchConfig:
+  fixedRate:
+    duration: "10s"
+    numberWorkers: 100
+  workerConfig:
+    maxCoolDown: "1s"
+    maxNumberSpans: 100
+    maxSpanLength: 100ms
+    maxTraceDepth: 10
+    receiveTimeout: 10s
+    sendTimeout: 10s

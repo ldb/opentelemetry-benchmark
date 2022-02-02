@@ -8,4 +8,11 @@ sudo apt-get -y install prometheus-node-exporter
 sudo cat <<EOF > /etc/otelcol/config.yaml
 ${config_file}
 EOF
+sudo sysctl -w fs.file-max=900000000
+sudo mkdir -p /lib/systemd/system/otelcol.service.d/
+sudo cat <<EOF > /lib/systemd/system/otelcol.service.d/override.conf
+[Service]
+LimitNOFILE=900000000
+EOF
+sudo systemctl daemon-reload
 sudo systemctl restart otelcol

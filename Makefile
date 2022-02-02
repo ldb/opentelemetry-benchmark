@@ -27,3 +27,6 @@ clean: ## Remove build artifacts.
 	docker-compose down;
 	cd terraform; terraform apply -auto-approve -destroy; rm tfplan; cd ..;
 	rm -rf bin;
+
+.PHONY: rebuild
+rebuild: clean all ## Tear down and bring everything back up.

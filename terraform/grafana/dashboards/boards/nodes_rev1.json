@@ -22,8 +22,8 @@
   "editable": true,
   "gnetId": 13978,
   "graphTooltip": 0,
-  "id": 3,
-  "iteration": 1643754640324,
+  "id": 2,
+  "iteration": 1643760596569,
   "links": [],
   "panels": [
     {
@@ -76,7 +76,7 @@
           "exemplar": true,
           "expr": "(\n  (1 - rate(node_cpu{job=\"node\", mode=\"idle\", instance=~\"$instance\"}[$__interval]))\n/ ignoring(cpu) group_left\n  count without (cpu)(node_cpu{job=\"node\", mode=\"idle\", instance=~\"$instance\"})\n)\n",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}} {{cpu}}",
           "refId": "A"
@@ -516,7 +516,7 @@
           "exemplar": true,
           "expr": "rate(node_disk_bytes_read{job=\"node\", instance=~\"$instance\", device!=\"\"}[$__interval])",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}} {{device}} read",
           "refId": "A"
@@ -525,7 +525,7 @@
           "exemplar": true,
           "expr": "rate(node_disk_bytes_written{job=\"node\", instance=~\"$instance\", device!=\"\"}[$__interval])",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}} {{device}} written",
           "refId": "B"
@@ -534,7 +534,7 @@
           "exemplar": true,
           "expr": "rate(node_disk_io_time_ms{job=\"node\", instance=~\"$instance\", device!=\"\"}[$__interval])",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}} {{device}} io time",
           "refId": "C"
@@ -750,7 +750,7 @@
           "exemplar": true,
           "expr": "rate(node_network_receive_bytes{job=\"node\", instance=~\"$instance\", device!=\"lo\"}[$__interval])",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}} {{device}}",
           "refId": "A"
@@ -849,7 +849,7 @@
           "exemplar": true,
           "expr": "rate(node_network_transmit_bytes{job=\"node\", instance=~\"$instance\", device!=\"lo\"}[$__interval])",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}}  {{device}}",
           "refId": "A"

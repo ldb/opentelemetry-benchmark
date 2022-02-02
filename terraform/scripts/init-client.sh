@@ -17,5 +17,11 @@ Type=simple
 [Install]
 WantedBy=multi-user.target
 EOF
-
+sudo sysctl -w fs.file-max=900000000
+sudo mkdir -p /etc/systemd/system/benchd.service.d/
+sudo cat <<EOF > /etc/systemd/system/benchd.service.d/override.conf
+[Service]
+LimitNOFILE=900000000
+EOF
 sudo systemctl daemon-reload
+sudo systemctl restart benchd

@@ -21,7 +21,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -45,7 +45,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -97,6 +97,7 @@
         {
           "exemplar": true,
           "expr": "sum(benchd_manager_active_workers_count) by (name)",
+          "instant": false,
           "interval": "",
           "legendFormat": "plan {{name}}",
           "refId": "A"
@@ -126,7 +127,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -207,7 +208,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -261,8 +262,40 @@
           "exemplar": true,
           "expr": " rate(benchd_worker_trace_roundtrip_duration_seconds_sum[1m])/\n rate(benchd_worker_trace_roundtrip_duration_seconds_count[1m])",
           "interval": "",
-          "legendFormat": "plan {{name}}",
+          "legendFormat": "average {{name}}",
           "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "benchd_worker_trace_roundtrip_duration_seconds{quantile=\"0.5\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "50% {{name}}",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "benchd_worker_trace_roundtrip_duration_seconds{quantile=\"0.9\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "90% {{name}}",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "benchd_worker_trace_roundtrip_duration_seconds{quantile=\"0.95\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "95% {{name}}",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "benchd_worker_trace_roundtrip_duration_seconds{quantile=\"0.99\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99% {{name}}",
+          "refId": "E"
         }
       ],
       "title": "Average Round Trip Time",
@@ -289,7 +322,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -370,7 +403,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -421,9 +454,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(benchd_manager_worker_error_count[1m])) by (name)",
+          "expr": "sum(rate(benchd_manager_worker_error_count[1m])) by (name,kind)",
           "interval": "",
-          "legendFormat": "plan {{name}}",
+          "legendFormat": "plan {{name}} {{kind}}",
           "refId": "A"
         }
       ],
