@@ -15,8 +15,6 @@ resource "local_file" "grafana-datasource" {
   filename = "./grafana/datasource/datasource.yaml"
   content  = <<EOT
 apiVersion: 1
-deleteDatasources:
-  - name: Prometheus
 datasources:
   - name: Prometheus
     type: prometheus
@@ -26,8 +24,10 @@ datasources:
     basicAuth: false
     isDefault: true
     version: 1
-    editable: false
+    editable: true
     apiVersion: 1
     uid: prom
+    jsonData:
+      httpMethod: GET
 EOT
 }

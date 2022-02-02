@@ -22,8 +22,8 @@
   "editable": true,
   "gnetId": 13978,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1643733463948,
+  "id": 3,
+  "iteration": 1643754640324,
   "links": [],
   "panels": [
     {
@@ -899,7 +899,7 @@
       }
     }
   ],
-  "refresh": "",
+  "refresh": "10s",
   "schemaVersion": 30,
   "style": "dark",
   "tags": [],
@@ -958,7 +958,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -989,5 +989,5 @@
   "timezone": "browser",
   "title": "Node Exporter Quickstart and Dashboard",
   "uid": "jHEawCbnk",
-  "version": 7
+  "version": 2
 }

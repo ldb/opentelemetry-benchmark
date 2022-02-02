@@ -15,7 +15,7 @@ provision: compile ## Provisions all infrastructure in Google Cloud
 	cd terraform; terraform init; terraform plan -out tfplan; terraform apply -auto-approve tfplan
 
 .PHONY: dashboard
-dashboard: provision ## Deploy a local Grafana instance for easier monitoring
+dashboard: ## Deploy a local Grafana instance for easier monitoring
 	docker-compose up -d grafana
 
 .PHONY: local
@@ -25,5 +25,5 @@ local: ## Spins up a local development environment.
 .PHONY: clean
 clean: ## Remove build artifacts.
 	docker-compose down;
-	cd terraform; terraform apply -auto-approve -destroy; rm terraform.tfstate terraform.tfstate.backup tfplan; cd ..;
+	cd terraform; terraform apply -auto-approve -destroy; rm tfplan; cd ..;
 	rm -rf bin;

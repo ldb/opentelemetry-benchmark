@@ -5,31 +5,47 @@ sudo apt-get -y install prometheus
 
 sudo cat << EOF > /etc/prometheus/prometheus.yml
 global:
-  scrape_interval:     5s
+  scrape_interval:     1s
   evaluation_interval: 5s
   # scrape_timeout is set to the global default (10s).
 scrape_configs:
+  - job_name: node
+    gce_sd_configs:
+      - zone: ${zone}
+        project: ${project}
+    relabel_configs:
+    - source_labels: [ __meta_gce_private_ip ]
+      target_label: __address__
+      replacement: "$${1}:9100"
+    - source_labels: [ __meta_gce_zone ]
+      regex: ".+/([^/]+)"
+      target_label: zone
+    - source_labels: [ __meta_gce_project ]
+      target_label: project
+    - source_labels: [ __meta_gce_instance_name ]
+      target_label: instance
+    - regex: "__meta_gce_metadata_(.+)"
+      action: labeldrop
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-  - job_name: node
-    static_configs:
-      - targets:
-        - 'localhost:9100'
-        - '${collector-address}:9100'
-%{ for ip in client-addresses ~}
-        - '${ip}:9100'
-%{ endfor ~}
+        labels:
+          instance: "monitoring"
   - job_name: benchd
     static_configs:
       - targets:
 %{ for ip in client-addresses ~}
         - '${ip}:7666'
 %{ endfor ~}
+        labels:
+          instance: "benchmarking-client-0"
   - job_name: otel-collector
     static_configs:
       - targets:
         - '${collector-address}:8888'
+        labels:
+          instance: "otel-collector"
+
 EOF
 
 sudo systemctl restart prometheus

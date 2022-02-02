@@ -6,7 +6,7 @@ A benchmarking tool for the [OpenTelemetry Collector](https://github.com/open-te
 This project contains all the code necessary to perform sophisticated maximum throughput benchmarks of the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector).
 
 Some features:
-- Automatic provisioning of testing infrastructure in Google Cloud using Terraform
+- Automatic provisioning of benchmarking infrastructure in Google Cloud using Terraform
 - Ability to run pre-configured plans that describe the benchmark itself
 - Easy to use CLI tool called `benchctl` to control and monitor the status of the benchmark
 - Includes Prometheus based monitoring of all components, namely the collector, the benchmarking daemon and Prometheus itself
@@ -74,6 +74,9 @@ To use it, use:
 ```shell
 ssh -i privatekey.pem benchmark@{INSTANCE_IP}
 ```
+
+Note that Terraform a simple firewall rule that grants networking access to all instances from the public IP of the current machine.
+If you are using a VPN, or are in an environment that regularly rotates its public IP address, you may have trouble accessing the instances.
 
 ## Usage
 

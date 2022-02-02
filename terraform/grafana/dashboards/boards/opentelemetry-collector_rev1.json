@@ -22,8 +22,8 @@
   "editable": true,
   "gnetId": 12553,
   "graphTooltip": 0,
-  "id": 2,
-  "iteration": 1643732718245,
+  "id": 1,
+  "iteration": 1643754582960,
   "links": [],
   "panels": [
     {
@@ -1414,7 +1414,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "10s",
   "schemaVersion": 30,
   "style": "dark",
   "tags": [],
@@ -1517,7 +1517,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -1547,5 +1547,5 @@
   "timezone": "",
   "title": "OpenTelemetry Collector",
   "uid": "BKf2sowmj",
-  "version": 5
+  "version": 2
 }

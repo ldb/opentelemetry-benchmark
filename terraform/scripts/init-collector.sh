@@ -4,3 +4,8 @@ wget https://github.com/open-telemetry/opentelemetry-collector-releases/releases
 sudo dpkg -i otelcol_0.41.0_linux_amd64.deb
 sudo apt-get update
 sudo apt-get -y install prometheus-node-exporter
+
+sudo cat <<EOF > /etc/otelcol/config.yaml
+${config_file}
+EOF
+sudo systemctl restart otelcol

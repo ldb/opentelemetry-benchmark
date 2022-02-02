@@ -22,7 +22,8 @@ var (
 	}, []string{"name", "kind"})
 
 	traceRoundtrip = promauto.NewSummaryVec(prometheus.SummaryOpts{
-		Name: "benchd_worker_trace_roundtrip_duration_seconds",
-		Help: "The duration of trace full trace roundtrip from being sent to being finished",
+		Name:       "benchd_worker_trace_roundtrip_duration_seconds",
+		Help:       "The duration of trace full trace roundtrip from being sent to being finished",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
 	}, []string{"name"})
 )

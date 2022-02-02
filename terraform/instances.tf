@@ -33,20 +33,11 @@ resource "google_compute_instance" "otel-collector" {
     ssh-keys = "benchmark:${replace(tls_private_key.ssh_key.public_key_openssh, "\n", "")} benchmark"
   }
 
-  metadata_startup_script = file("${path.module}/scripts/init-collector.sh")
-
-  provisioner "file" {
-    content = templatefile("${path.module}/${var.sut_config_file}", {
+  metadata_startup_script = templatefile("${path.module}/scripts/init-collector.sh",{
+    config_file = templatefile("${path.module}/${var.sut_config_file}", {
       client_ip = google_compute_instance.clients.0.network_interface.0.network_ip
     })
-    destination = "config.yaml"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo cp config.yaml /etc/otelcol/config.yaml",
-      "sudo systemctl restart otelcol",
-    ]
-  }
+  })
 
   connection {
     type        = "ssh"
@@ -109,6 +100,17 @@ resource "google_compute_instance" "clients" {
   }
 }
 
+resource "google_service_account" "prometheus-sd-user" {
+  account_id   = "prometheus-sd-user"
+  display_name = "Prometheus Service Discovery"
+}
+
+resource "google_project_iam_member" "prometheus-sd-user-compute-viewer" {
+  role    = "roles/compute.viewer"
+  member  = "serviceAccount:${google_service_account.prometheus-sd-user.email}"
+  project = "opentelemetry-benchmark"
+}
+
 resource "google_compute_instance" "monitoring" {
   name         = "monitoring"
   machine_type = var.monitoring_machine_type
@@ -137,5 +139,13 @@ resource "google_compute_instance" "monitoring" {
   metadata_startup_script = templatefile("${path.module}/scripts/init-monitoring.sh.tmpl", {
     client-addresses  = google_compute_instance.clients[*].network_interface.0.network_ip,
     collector-address = google_compute_instance.otel-collector.network_interface.0.network_ip,
+    zone = "europe-west1-b"
+    project = "opentelemetry-benchmark"
   })
+
+  service_account {
+    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+    email  = google_service_account.prometheus-sd-user.email
+    scopes = ["cloud-platform", "compute-ro"]
+  }
 }
