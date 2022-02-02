@@ -8,6 +8,8 @@ import (
 	"github.com/ldb/openetelemtry-benchmark/command"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -28,12 +30,11 @@ func main() {
 		log.Fatalf("error generating benchmarking plan: %v", err)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("parsed the following plan:\n%+v\n", plan)
 	fmt.Println("do you want to apply this plan? [Y/n]")
-	scanner.Scan()
-	t := scanner.Text()
-	if t != "yes" && t != "y" && t != "" {
+	t, _ := reader.ReadString('\n')
+	if t != "yes\n" && t != "y\n" && t != "\n" {
 		fmt.Println("ok, aborting")
 		return
 	}
@@ -52,12 +53,16 @@ func main() {
 	}
 	fmt.Println("plan applied.")
 	fmt.Println("do you want to start this plan? [Y/n]")
-	scanner.Scan()
-	t = scanner.Text()
-	if t != "yes" && t != "y" && t != "" {
+	t, _ = reader.ReadString('\n')
+	if t != "yes\n" && t != "y\n" && t != "\n" {
 		fmt.Println("ok, aborting")
 		return
 	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	fmt.Println("starting plan. use ^C to stop the plan")
+
 	status, err = client.StartBenchmark(plan.Name)
 	if err != nil {
 		log.Fatalf("error starting benchmark: %v", err)
@@ -78,6 +83,9 @@ outer:
 				log.Fatalf("error getting benchmark status: %v", err)
 			}
 			fmt.Printf("%+v\n", status)
+		case <-c:
+			fmt.Println("\r received signal. stopping plan..")
+			break outer
 		}
 	}
 	status, err = client.StopBenchmark(plan.Name)
@@ -88,4 +96,20 @@ outer:
 		log.Fatalf("benchmark not stopped. current state: %+v", status)
 	}
 	fmt.Printf("%+v\n", status)
+
+	logsURL := ""
+	fmt.Printf("plan stopped. you can download the logs here: %s\n", logsURL)
+
+	fmt.Println("do you want to destroy the plan? \033[31m WARNING THIS WILL DESTROY YOUR LOG FILES \033[0m. Proceed? [y/N]")
+	t, _ = reader.ReadString('\n')
+	if t != "yes\n" && t != "y\n" {
+		fmt.Println("ok, aborting")
+		return
+	}
+	status, err = client.DestroyBenchmark(plan.Name)
+	if err != nil {
+		log.Fatalf("error destroying benchmark: %v", err)
+	}
+	fmt.Printf("%+v\n", status)
+
 }
