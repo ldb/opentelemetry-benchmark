@@ -16,6 +16,11 @@ var (
 		Help: "The total number of traces generated and sent by all workers",
 	}, []string{"name"})
 
+	tracesReceived = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "benchd_manager_traces_received_count",
+		Help: "The total number of traces received by all workers",
+	}, []string{"name"})
+
 	workerErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "benchd_manager_worker_error_count",
 		Help: "The total number of errors that occurred in all workers",

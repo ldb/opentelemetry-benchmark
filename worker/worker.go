@@ -47,10 +47,11 @@ type Worker struct {
 	traceDepth    int
 	spanLength    time.Duration
 	coolDown      time.Duration
-	startT        time.Time
-	sendT         time.Time
-	receiveT      time.Time
-	sentReceivedD time.Duration
+	startT        time.Time     // Start time of run
+	sendT         time.Time     // Beginning to send
+	sendET        time.Time     // Done sending
+	receiveT      time.Time     // Received values back
+	sentReceivedD time.Duration // Delta between sendET and receiveT
 }
 
 func (w *Worker) initTracer(target string) {
@@ -88,7 +89,12 @@ func (w *Worker) Run(ctx context.Context) error {
 		err := w.run(ctx)
 		if err != nil {
 			if err != context.Canceled {
-				workerErrors.WithLabelValues(w.managerName, err.Error()).Inc()
+				e := err.Error()
+				if len(e) >= 100 {
+					// Read only 100 first chars of error message because of label cardinality
+					e = e[:100]
+				}
+				workerErrors.WithLabelValues(w.managerName, e).Inc()
 			}
 			return err
 		}
@@ -107,11 +113,12 @@ func (w *Worker) run(ctx context.Context) error {
 		w.sentReceivedD = w.receiveT.Sub(w.sendT)
 		if err != context.DeadlineExceeded {
 			w.log(statusSendError)
-			return err
+			return fmt.Errorf("error flushing trace: %w", err)
 		}
 		w.log(statusSendTimeout)
 		return fmt.Errorf("send timeout: %w", sendTimeout.Err())
 	}
+	w.sendET = time.Now()
 	tracesSent.WithLabelValues(w.managerName).Inc()
 	receiveTimeout, cancelReceive := context.WithTimeout(context.Background(), w.Config.ReceiveTimeout.Duration)
 	defer cancelReceive()
@@ -119,17 +126,18 @@ func (w *Worker) run(ctx context.Context) error {
 	case <-ctx.Done():
 		activeWorkers.WithLabelValues(w.managerName).Dec()
 		w.log(statusStopped)
-		return ctx.Err()
+		return fmt.Errorf("worker cancelled: %v", ctx.Err())
 
 	case <-receiveTimeout.Done():
 		w.receiveT = time.Now()
-		w.sentReceivedD = w.receiveT.Sub(w.sendT)
+		w.sentReceivedD = w.receiveT.Sub(w.sendET)
 		w.log(statusReceiveTimeout)
 		return fmt.Errorf("receive timeout: %w", sendTimeout.Err())
 
 	case <-w.FinishTrace:
 		w.receiveT = time.Now()
-		w.sentReceivedD = w.receiveT.Sub(w.sendT)
+		w.sentReceivedD = w.receiveT.Sub(w.sendET)
+		tracesReceived.WithLabelValues(w.managerName).Inc()
 		cooldown := time.Duration(rand.Int63n(w.Config.MaxCoolDown.Milliseconds())) * time.Millisecond
 		w.coolDown = cooldown
 		w.log(statusSuccess)
@@ -141,7 +149,7 @@ func (w *Worker) run(ctx context.Context) error {
 
 // log logs the last request to w.Logger.
 func (w *Worker) log(s status) {
-	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d",
+	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d %d",
 		w.ID,
 		int(s),
 		w.traceDepth,
@@ -149,6 +157,7 @@ func (w *Worker) log(s status) {
 		w.coolDown.Milliseconds(),
 		w.startT.UnixMilli(),
 		w.sendT.UnixMilli(),
+		w.sendET.UnixMilli(),
 		w.receiveT.UnixMilli(),
 		w.sentReceivedD.Milliseconds(),
 	))

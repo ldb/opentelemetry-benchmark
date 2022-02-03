@@ -17,7 +17,7 @@ resource "google_compute_instance" "otel-collector" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-9"
+      image = "debian-cloud/debian-11"
     }
   }
 
@@ -59,7 +59,7 @@ resource "google_compute_instance" "clients" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-9"
+      image = "debian-cloud/debian-11"
     }
   }
 
@@ -83,11 +83,13 @@ resource "google_compute_instance" "clients" {
     destination = "benchd"
   }
   provisioner "remote-exec" {
+    on_failure = continue
     inline = [
       #"sudo base64 --decode benchdb64 > benchd",
       "sudo chmod +x benchd",
       "sudo cp benchd /usr/local/bin/benchd",
-      "sudo systemctl restart benchd",
+      "sleep 1",
+      "sudo systemctl start benchd",
     ]
   }
 
@@ -120,7 +122,7 @@ resource "google_compute_instance" "monitoring" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-9"
+      image = "debian-cloud/debian-11"
     }
   }
 
@@ -141,6 +143,7 @@ resource "google_compute_instance" "monitoring" {
     collector-address = google_compute_instance.otel-collector.network_interface.0.network_ip,
     zone = "europe-west1-b"
     project = "opentelemetry-benchmark"
+    replacement = "$${1}:9100"
   })
 
   service_account {

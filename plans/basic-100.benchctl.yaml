@@ -1,7 +1,7 @@
 # A highly concurrent benchmark. 100 workers are being created every 10 seconds for 5 minute, sending up to a 100 spans at a depth of 10.
-# This mainly stresses file descriptor limits on both, the sending, and the receiving end.
+# This mainly stresses file descriptor limits on both, the sending, and the receiving end. It's a good stress test for the initial setup verification.
 name: "basic-100"
-duration: 5m
+duration: 10m
 benchConfig:
   fixedRate:
     duration: "10s"

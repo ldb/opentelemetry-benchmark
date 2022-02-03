@@ -1,7 +1,7 @@
 variable "sut_machine_type" {
   type        = string
   description = "Instance Type for System under Test."
-  default     = "e2-medium"
+  default     = "e2-standard-2"
 }
 
 variable "sut_config_file" {
@@ -19,7 +19,7 @@ variable "monitoring_machine_type" {
 variable "client_machine_type" {
   type        = string
   description = "Instance Type for benchmarking clients."
-  default     = "e2-medium"
+  default     = "e2-standard-4"
 }
 
 variable "number_clients" {

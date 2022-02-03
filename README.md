@@ -52,9 +52,10 @@ After that, simply run
 make compile
 ```
 
-This will compile two binaries in the `./bin` directory: 
+This will compile three binaries in the `./bin` directory: 
 - `benchd`, which is the actual benchmarking daemon running in Google Cloud and is crosscompiled for linux/amd64
 - `benchctl`, a command line tool to control one or more `benchd` instances at once
+- `promdl`, a small tool that downloads the values of some predefined queries from the monitoring instance and saves the results as CSV files
 
 ### Provisioning
 

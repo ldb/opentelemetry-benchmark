@@ -24,4 +24,3 @@ sudo cat <<EOF > /etc/systemd/system/benchd.service.d/override.conf
 LimitNOFILE=900000000
 EOF
 sudo systemctl daemon-reload
-sudo systemctl restart benchd

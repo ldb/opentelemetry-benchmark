@@ -16,7 +16,7 @@ scrape_configs:
     relabel_configs:
     - source_labels: [ __meta_gce_private_ip ]
       target_label: __address__
-      replacement: "$${1}:9100"
+      replacement: '\${replacement}'
     - source_labels: [ __meta_gce_zone ]
       regex: ".+/([^/]+)"
       target_label: zone

@@ -9,6 +9,7 @@ all: compile provision dashboard ## Compiles binaries, provisions all infrastruc
 compile: ## Compiles the binaries.
 	GOOS=linux GOARCH=amd64 go build -o bin/benchd cmd/benchd/main.go # Compile for server
 	go build -o bin/benchctl cmd/benchctl/*.go # Compile for local
+	go build -o bin/promdl cmd/promdl/*.go # Compile for local
 
 .PHONY: provision
 provision: compile ## Provisions all infrastructure in Google Cloud
