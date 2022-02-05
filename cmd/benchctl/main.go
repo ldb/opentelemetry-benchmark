@@ -4,13 +4,15 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/ldb/openetelemtry-benchmark/benchmark"
-	"github.com/ldb/openetelemtry-benchmark/command"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+
+	"github.com/ldb/openetelemtry-benchmark/benchmark"
+	"github.com/ldb/openetelemtry-benchmark/command"
 )
 
 var (
@@ -97,7 +99,8 @@ outer:
 	}
 	fmt.Printf("%+v\n", status)
 
-	logsURL := ""
+	logFile := strings.Split(status.LogFile, "/")
+	logsURL := plan.ClientAddress + "/logs/" + logFile[2]
 	fmt.Printf("plan stopped. you can download the logs here: %s\n", logsURL)
 
 	fmt.Println("do you want to destroy the plan? \033[31m WARNING THIS WILL DESTROY YOUR LOG FILES \033[0m. Proceed? [y/N]")

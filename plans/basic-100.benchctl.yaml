@@ -1,11 +1,13 @@
-# A highly concurrent benchmark. 100 workers are being created every 10 seconds for 5 minute, sending up to a 100 spans at a depth of 10.
-# This mainly stresses file descriptor limits on both, the sending, and the receiving end. It's a good stress test for the initial setup verification.
+# A highly concurrent benchmark. 10 workers are being created every second for 10 minute, sending up to a 100 spans at a depth of 10.
+# This plan should generally be too much for the collector to handle sutainably.
+# Once it reaches its capacity limits it errors can be seen on the client.
+# This is good for finding a throughput limit quickly. A second benchmark should be run to verify sustainability of the peak load.
 name: "basic-100"
 duration: 10m
 benchConfig:
   fixedRate:
-    duration: "10s"
-    numberWorkers: 100
+    duration: "1s"
+    numberWorkers: 10
   workerConfig:
     maxCoolDown: "1s"
     maxNumberSpans: 100

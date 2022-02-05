@@ -1,6 +1,6 @@
 # This plan runs a 30 minute benchmark, scaling by 10 workers every second. It can be used to establish a baseline
 # measurement. Its an extension on the bench-1 plan in that it sends bigger payloads at the same rate.
-name: "bench-2"
+name: "realistic-2"
 duration: 30m
 benchConfig:
   fixedRate:

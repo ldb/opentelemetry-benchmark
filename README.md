@@ -101,3 +101,36 @@ By default its called `benchctl.config`. It contains a list of IP addresses of t
 A list of plan files can be found in `./plans`. **Important**: *Make sure to provision the Collector with the corresponding configuration before running a plan.
 By default, it is provisioned with the `basic-1` configuration*
 
+### Benchmark plans
+
+Each Benchmark is described in a *plan file* that can be found under `./plans`. 
+Note that a plan should only be run if the matching OpenTelemetry config (check the prefix) has been deployed.
+
+### promdl
+
+`promdl` is a small tool that can be used to download relevant system and machine metrics from the instances for the time of a benchmark.  
+It takes the following arguments:
+```shell
+  -end duration
+        how much time to go back to end fetching fetch results from (default 30m0s)
+  -host string
+        Prometheus host URL
+  -start duration
+        how much time to go back to start fetching fetch results from (default 1h0m0s)
+```
+It downloads the results of a set of predefined queries between the timestamps of `[now-start, now-end]`.
+Note that the granularity of results may vary, based on the size of the timeframe. For best comparability we recommend all benchmarks to have roughly the same duration.
+
+## Study Design
+
+We design the study around four basic categories of plans: 
+
+- **basic** plans are meant to benchmark the raw performance of the OpenTelemetry collector without any features enabled. 
+The workload is very synthetic and the plans are mostly differentiated by the scale of workers and the number of spans per trace and their depth.
+- **realistic** plans are meant to model more realistic workloads with fewer but longer spans that contain attributes.
+- **mutate** plans are made for benchmarking a specific application scenario of the collector: Filtering out a specific attribute in incoming spans.
+- **sampled** plans, similar to *filtered* ones model the behaviour of probabilistic sampling. In this scenario, a portion of all sent traces is expected to be sampled, the rest timing out on receiving.
+
+The former two models are to answer the question of sensible deployment practices for an expected workload. They are of mere exploratorive nature.  
+The latter two models iterate on these results and try to answer the question on how different features used in the collector affect its performance.  
+We expect the mutating benchmark plans to perform worse (as additionatl computations and mutations take place), while the sampled workloads should perform better in sending (more sent traces), and similarly or slightly worse in receiving (some traces are sampled, so receiving will time out).

@@ -1,8 +1,7 @@
 # A "basic" plan with all parameters set to 1...
-# It runs for 10 seconds, creating 1 worker every 1 second which send 1 span of max length 1 second every 1 second ...
-# You get the gist.
+# It runs for 10 minutes, creating 1 worker every 1 second which send 1 span of max length 1 second every 1 second ...
 # Good for testing that stuff works, but not a very heavy workload
-name: "basic-1"
+name: "basic-1-verify"
 duration: 10m
 benchConfig:
   fixedRate:

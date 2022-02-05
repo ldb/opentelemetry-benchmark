@@ -92,6 +92,7 @@ func runQuery(url, queryName string) {
 		log.Fatalf("error creating file: %v", err)
 	}
 	w := csv.NewWriter(f)
+	w.Write([]string{"time", "value"})
 	if err := w.WriteAll(res); err != nil {
 		log.Fatalf("error writing csv: %v", err)
 	}

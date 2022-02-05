@@ -1,0 +1,28 @@
+# A "basic" plan with ~all~ most parameters set to 1...
+# It runs for 30 minutes, creating 10 workers every 1 second which send 1 span of max length 1 second every 1 second ...
+# This test is meant to compare against the self-published Benchmarking results the authors of OpenTelemetry Collector put out:
+# https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/performance.md
+# Note that our client does not heavily use attributes, so performance should be even higher compare in our case.
+name: "basic-1-compare"
+duration: 30m
+benchConfig:
+  fixedRate:
+    duration: "1s"
+    numberWorkers: 10
+  workerConfig:
+    maxCoolDown: "1s"
+    maxNumberSpans: 1
+    maxSpanLength: 1s
+    maxTraceDepth: 1
+    receiveTimeout: 1s
+    sendTimeout: 1s
+
+# Benchd OOM Crashed after 22 minutes running:
+# 11:53:17 benchmarking-client-0 systemd[1]: benchd.service: A process of this unit has been killed by the OOM killer.
+# 11:53:17 benchmarking-client-0 systemd[1]: benchd.service: Main process exited, code=killed, status=9/KILL
+# 11:53:17 benchmarking-client-0 systemd[1]: benchd.service: Failed with result 'oom-kill'.
+# 11:53:18 benchmarking-client-0 systemd[1]: benchd.service: Consumed 38min 29.202s CPU time.
+# 11:53:18 benchmarking-client-0 systemd[1]: benchd.service: Scheduled restart job, restart counter is at 1.
+# 11:53:18 benchmarking-client-0 systemd[1]: Stopped benchd Benchmarking Client.
+# 11:53:18 benchmarking-client-0 systemd[1]: benchd.service: Consumed 38min 29.202s CPU time.
+# 11:53:18 benchmarking-client-0 systemd[1]: Started benchd Benchmarking Client.
