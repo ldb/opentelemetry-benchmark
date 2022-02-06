@@ -1,0 +1,24 @@
+# A sampling configuration for the exporter. It is set to sample 25% of incoming traces.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  otlphttp:
+    endpoint: http://${client_ip}:2113/v1/traces # This is where `benchd` listens
+
+processors:
+  probabilistic_sampler:
+    hash_seed: 666
+    sampling_percentage: 25 # This samples 25%, meaning 75% of traces get filtered out.
+
+service:
+  extensions: []
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [probabilistic_sampler]
+      exporters: [otlphttp]

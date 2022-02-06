@@ -2,7 +2,6 @@
 # It runs for 30 minutes, creating 10 workers every 1 second which send 1 span of max length 1 second every 1 second ...
 # This test is meant to compare against the self-published Benchmarking results the authors of OpenTelemetry Collector put out:
 # https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/performance.md
-# Note that our client does not heavily use attributes, so performance should be even higher compare in our case.
 name: "basic-1-compare"
 duration: 30m
 benchConfig:

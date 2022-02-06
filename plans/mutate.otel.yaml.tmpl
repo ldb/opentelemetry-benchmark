@@ -1,0 +1,24 @@
+# A mutating configuration for the exporter. It configures a processor that deletes the "risky" attribute.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  otlphttp:
+    endpoint: http://${client_ip}:2113/v1/traces # This is where `benchd` listens
+
+processors:
+  attributes/deleteRisky:
+    actions:
+      - key: risky
+        action: delete
+
+service:
+  extensions: []
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/deleteRisky]
+      exporters: [otlphttp]

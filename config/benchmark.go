@@ -31,11 +31,14 @@ type WorkerConfig struct {
 	Target          string   `json:"target" yaml:"target"`
 	ReceiverAddress string   `json:"receiverAddress" yaml:"receiverAddress"`
 	MaxTraceDepth   int      `json:"maxTraceDepth" yaml:"maxTraceDepth"`   // How deeply the generate spans should be nested.
-	MaxNumberSpans  int      `json:"maxNumberSpans" yaml:"maxNumberSpans"` // How many simultanous spans to generate per trace.
+	MaxNumberSpans  int      `json:"maxNumberSpans" yaml:"maxNumberSpans"` // How many simultanous spans to generate per trace. // Not used yet.
 	MaxSpanLength   Duration `json:"maxSpanLength" yaml:"maxSpanLength"`
 	MaxCoolDown     Duration `json:"maxCoolDown" yaml:"maxCoolDown"` // Maximum random cooldown between requests.
 	SendTimeout     Duration `json:"sendTimeout" yaml:"sendTimeout"`
 	ReceiveTimeout  Duration `json:"receiveTimeout" yaml:"receiveTimeout"`
+	// RiskyAttribute is a special attribute that is added to a random span in the trace for the filter based benchmarks.
+	RiskyAttributeProbability int `json:"riskyAttributeProbability" yaml:"riskyAttributeProbability"`
+	MaxExtraAttributes        int `json:"maxExtraAttributes" yaml:"maxExtraAttributes"` // The maximum number of extra attributes to add to each span.
 }
 
 // FixedRate represents scaling at a fixed rate of NumberWorkers per Duration.

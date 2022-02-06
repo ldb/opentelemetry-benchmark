@@ -1,0 +1,26 @@
+# This plan runs a 20 minute benchmark, scaling by 5 workers every second. It can be used to establish a baseline
+# measurement and to find limit. Its supposed to showcase a "realistic" workload scenario with a trace depth of 20
+# spans that carry up to 10 extra attributes.
+# It is similar to the basic-50 plan, but more ... realistic :)
+# Characteristics:
+# 2300 Workers ~= 50% CPU load and 40% memory usage
+# 3000 Workers ~= 76% CPU load and 50% memory usage # End of the 10 minute run
+# 3500 Workers ~= 82% CPU load and 62% memory usage # Extended run to 20 minutes
+# 4300 Workers ~= 90% CPU load and 76% memory usage # Extended run to 20 minutes
+# 5700 Workers ~= 93% CPU load and 98% memory usage # Extended run to 20 minutes
+# 5900 Workers ~= 93% CPU load and 100% memory usage # Extended run to 20 minutes; errors appear, collector was likely OOM killed and restarted
+
+name: "realistic-50"
+duration: 20m
+benchConfig:
+  fixedRate:
+    duration: "1s"
+    numberWorkers: 5
+  workerConfig:
+    maxCoolDown: 1s
+    maxNumberSpans: 50
+    maxSpanLength: 250ms
+    maxTraceDepth: 20
+    maxExtraAttributes: 10
+    receiveTimeout: 10s
+    sendTimeout: 10s

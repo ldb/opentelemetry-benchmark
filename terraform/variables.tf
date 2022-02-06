@@ -7,7 +7,7 @@ variable "sut_machine_type" {
 variable "sut_config_file" {
   type        = string
   description = "The config file template to provision the system under test with."
-  default     = "../plans/basic.otel.yaml.tmpl"
+  default     = "../plans/sample.otel.yaml.tmpl"
 }
 
 variable "monitoring_machine_type" {

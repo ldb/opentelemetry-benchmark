@@ -1,5 +1,5 @@
 # A highly concurrent benchmark. 10 workers are being created every second for 10 minute, sending up to a 100 spans at a depth of 10.
-# This plan should generally be too much for the collector to handle sutainably.
+# This plan should generally be enough to bring the collector to its knees relatively quickly.
 # Once it reaches its capacity limits it errors can be seen on the client.
 # This is good for finding a throughput limit quickly. A second benchmark should be run to verify sustainability of the peak load.
 name: "basic-100"

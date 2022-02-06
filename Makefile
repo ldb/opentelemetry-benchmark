@@ -5,6 +5,15 @@ help: ## Lists the available commands.
 .PHONY: all
 all: compile provision dashboard ## Compiles binaries, provisions all infrastructure and starts Grafana Dashbaord.
 
+.PHONY: clean
+clean: ## Remove build artifacts.
+	docker-compose down;
+	cd terraform; terraform apply -auto-approve -destroy; rm tfplan; cd ..;
+	rm -rf bin;
+
+.PHONY: rebuild
+rebuild: clean all ## Tear down and bring everything back up.
+
 .PHONY: compile
 compile: ## Compiles the binaries.
 	GOOS=linux GOARCH=amd64 go build -o bin/benchd cmd/benchd/main.go # Compile for server
@@ -21,13 +30,4 @@ dashboard: ## Deploy a local Grafana instance for easier monitoring
 
 .PHONY: local
 local: ## Spins up a local development environment.
-	docker-compose --build
-
-.PHONY: clean
-clean: ## Remove build artifacts.
-	docker-compose down;
-	cd terraform; terraform apply -auto-approve -destroy; rm tfplan; cd ..;
-	rm -rf bin;
-
-.PHONY: rebuild
-rebuild: clean all ## Tear down and bring everything back up.
+	docker-compose up --build

@@ -1,6 +1,8 @@
 benchctl.config
 privatekey.pem
 results/*
+bin/*
+terraform/tfplan
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,terraform,jetbrains+all,macos,linux

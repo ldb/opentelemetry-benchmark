@@ -1,0 +1,20 @@
+# This is the sustain version of sample-100.
+# For comparability reasons with mutate-50 and realistic-50, this plan only scales to 5000 workers.
+# That means the collector ist not at all loaded CPU wise, and 80% load can be seen on memory.
+
+name: "sample-100-sustain"
+duration: 30m
+benchConfig:
+  steps:
+    - duration: "1s" # This duration has no meaning here because there is only one step to execute.
+      numberWorkers: 5000
+  workerConfig:
+    maxCoolDown: 1s
+    maxNumberSpans: 50
+    maxSpanLength: 250ms
+    maxTraceDepth: 20
+    maxExtraAttributes: 10
+    # We can only identify a non-sampled trace by receiving a timeout on receive. In order to maintain a high sending rate, receiveTimeout is reduced from 10s to 1s.
+    # (Workers only send the next trace when the previous one was either received or timed out.)
+    receiveTimeout: 1s 
+    sendTimeout: 10s

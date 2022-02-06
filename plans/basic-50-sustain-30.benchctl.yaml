@@ -4,7 +4,7 @@
 
 # bench-50 description:
 # A highly concurrent benchmark. 5 workers are being created every second for 10 minutes, sending up to a 100 spans at a depth of 10.
-# This benchmark should put the collecot at the maximum sustainable load.
+# This benchmark should put the collector at the maximum sustainable load.
 # Characteristics:
 # 1800 Workers ~= 85% CPU load and 30% memory usage
 # 2200 Workers ~= 90% CPU load and 40% memory usage

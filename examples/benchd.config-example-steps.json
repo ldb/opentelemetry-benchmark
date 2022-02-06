@@ -8,7 +8,8 @@
     "maxSpanLength": "1s",
     "maxCoolDown": "1s",
     "sendTimeout": "1s",
-    "receiveTimeout": "2s"
+    "receiveTimeout": "2s",
+    "riskyAttributeProbability": 25
   },
   "steps": [
     {

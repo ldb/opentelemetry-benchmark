@@ -1,0 +1,25 @@
+# This plan runs a 20 minute benchmark, scaling by 5 workers every second. It can be used to establish a baseline
+# measurement and to find a limit. It's supposed to showcase a "mutating" workload. It is based on a "realistic" workload
+# with a trace depth of 20 levels and 50 spans that carry up to 10 extra attributes.
+# Characteristics:
+# 4700 Workers ~= 90% CPU load and 82% memory usage
+# 5000 Workers ~= 92% CPU load and 88% memory usage
+# 5400 Workers ~= 94% CPU load and 93% memory usage
+# 5700 Workers ~= 96% CPU load and 98% memory usage
+# 5900 Workers ~= 96% CPU load and 100% memory usage # Errors appear, collector was likely OOM killed and restarted
+
+name: "mutate-50"
+duration: 20m
+benchConfig:
+  fixedRate:
+    duration: "1s"
+    numberWorkers: 5
+  workerConfig:
+    maxCoolDown: 1s
+    maxNumberSpans: 50
+    maxSpanLength: 250ms
+    maxTraceDepth: 20
+    maxExtraAttributes: 10
+    receiveTimeout: 10s
+    sendTimeout: 10s
+    riskyAttributeProbability: 50 # 50% of traces contain the "risky" attribute that will be filtered by the collector.

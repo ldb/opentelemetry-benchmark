@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// ControlConfig is the configuration file produced by Terraform during provisioning of the infrastructure.
+// It is read by `benchctl`.
 type ControlConfig struct {
 	Target     string
 	Clients    []string

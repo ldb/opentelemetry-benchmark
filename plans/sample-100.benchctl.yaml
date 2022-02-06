@@ -1,0 +1,24 @@
+# This plan runs a 20 minute benchmark. It is based on the realistic-50. The only difference is the worker creation rate, which is 10/s instead of 5/s and a lower receiveTimeout. 
+# It is to be used with the sample configuration.
+# Characteristics:
+# 5000 Workers ~= 50% CPU load and 80% memory usage
+# 6000 Workers ~= 55% CPU load and 95% memory usage
+# 6600 Workers ~= 58% CPU load and 99% memory usage # Shortly after this, collector OOMs
+
+
+name: "sample-100"
+duration: 20m
+benchConfig:
+  fixedRate:
+    duration: "1s"
+    numberWorkers: 10
+  workerConfig:
+    maxCoolDown: 1s
+    maxNumberSpans: 50
+    maxSpanLength: 250ms
+    maxTraceDepth: 20
+    maxExtraAttributes: 10
+    # We can only identify a non-sampled trace by receiving a timeout on receive. In order to maintain a high sending rate, receiveTimeout is reduced from 10s to 1s.
+    # (Workers only send the next trace when the previous one was either received or timed out.)
+    receiveTimeout: 1s 
+    sendTimeout: 10s

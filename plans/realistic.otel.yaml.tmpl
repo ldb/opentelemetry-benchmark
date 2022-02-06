@@ -1,0 +1,18 @@
+# Minimal OTEL Config that sends all traces back to benchd without mutating them in any way.
+# This is the same as the basic configuration as in basic.otel.yaml.tmpl.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  otlphttp:
+    endpoint: http://${client_ip}:2113/v1/traces # This is where `benchd` listens
+
+service:
+  extensions: []
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlphttp]

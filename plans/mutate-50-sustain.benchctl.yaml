@@ -1,0 +1,17 @@
+# Sustain version of mutate-50, with 5000 workers.
+
+name: "mutate-50-sustain"
+duration: 30m
+benchConfig:
+  steps:
+    - duration: "1s" # This duration has no meaning here because there is only one step to execute.
+      numberWorkers: 5000
+  workerConfig:
+    maxCoolDown: 1s
+    maxNumberSpans: 50
+    maxSpanLength: 250ms
+    maxTraceDepth: 20
+    maxExtraAttributes: 10
+    receiveTimeout: 10s
+    sendTimeout: 10s
+    riskyAttributeProbability: 50 # 50% of traces contain the "risky" attribute that will be filtered by the collector.

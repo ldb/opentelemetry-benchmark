@@ -126,9 +126,10 @@ Note that the granularity of results may vary, based on the size of the timefram
 We design the study around four basic categories of plans: 
 
 - **basic** plans are meant to benchmark the raw performance of the OpenTelemetry collector without any features enabled. 
-The workload is very synthetic and the plans are mostly differentiated by the scale of workers and the number of spans per trace and their depth.
+The workload is very synthetic and the plans are mostly differentiated by the scale of workers and the number of spans per trace and their depth.  
+It is well suited for making an initial assessment on the infrastructure (e.g verify filedescriptor limits are high enough).
 - **realistic** plans are meant to model more realistic workloads with fewer but longer spans that contain attributes.
-- **mutate** plans are made for benchmarking a specific application scenario of the collector: Filtering out a specific attribute in incoming spans.
+- **mutate** plans are made for benchmarking a specific application scenario of the collector: Filtering out a specific "risky" attribute in incoming spans.
 - **sampled** plans, similar to *filtered* ones model the behaviour of probabilistic sampling. In this scenario, a portion of all sent traces is expected to be sampled, the rest timing out on receiving.
 
 The former two models are to answer the question of sensible deployment practices for an expected workload. They are of mere exploratorive nature.  

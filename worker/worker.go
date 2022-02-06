@@ -44,14 +44,16 @@ type Worker struct {
 	Logger         Logger
 
 	// recorded Values
-	traceDepth    int
-	spanLength    time.Duration
-	coolDown      time.Duration
-	startT        time.Time     // Start time of run
-	sendT         time.Time     // Beginning to send
-	sendET        time.Time     // Done sending
-	receiveT      time.Time     // Received values back
-	sentReceivedD time.Duration // Delta between sendET and receiveT
+	traceDepth          int
+	riskyAttributeDepth int
+	extraAttributes     int
+	spanLength          time.Duration
+	coolDown            time.Duration
+	startT              time.Time     // Start time of run
+	sendT               time.Time     // Beginning to send
+	sendET              time.Time     // Done sending
+	receiveT            time.Time     // Received values back
+	sentReceivedD       time.Duration // Delta between sendET and receiveT
 }
 
 func (w *Worker) initTracer(target string) {
@@ -149,17 +151,19 @@ func (w *Worker) run(ctx context.Context) error {
 
 // log logs the last request to w.Logger.
 func (w *Worker) log(s status) {
-	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d %d",
-		w.ID,
-		int(s),
-		w.traceDepth,
-		w.spanLength.Milliseconds(),
-		w.coolDown.Milliseconds(),
-		w.startT.UnixMilli(),
-		w.sendT.UnixMilli(),
-		w.sendET.UnixMilli(),
-		w.receiveT.UnixMilli(),
-		w.sentReceivedD.Milliseconds(),
+	w.Logger.Println(fmt.Sprintf("%d %d %d %d %d %d %d %d %d %d %d %d",
+		w.ID,                           // worker ID
+		int(s),                         // worker status code
+		w.traceDepth,                   // trace depth
+		w.riskyAttributeDepth,          // depth of risky attribute
+		w.extraAttributes,              // number of extra attributes in trace
+		w.spanLength.Milliseconds(),    // accumulated spanlength
+		w.coolDown.Milliseconds(),      // cooldown
+		w.startT.UnixMilli(),           // start worker
+		w.sendT.UnixMilli(),            // start sending payload
+		w.sendET.UnixMilli(),           // end sending
+		w.receiveT.UnixMilli(),         // receive response
+		w.sentReceivedD.Milliseconds(), // delta end sending and receive
 	))
 }
 
@@ -167,25 +171,42 @@ func (w *Worker) generateTrace() {
 	d := rand.Intn(w.Config.MaxTraceDepth)
 	w.traceDepth = d
 	ctx, trace := w.tracer.Start(context.Background(), "parentTrace")
-	w.child(ctx, d)
+	riskyAtDepth := 0
+	if w.Config.RiskyAttributeProbability > 0 && d > 0 && rand.Intn(100) <= w.Config.RiskyAttributeProbability {
+		riskyAtDepth = rand.Intn(d)
+	}
+	w.child(ctx, d, riskyAtDepth)
 	trace.End()
 }
 
-func (w *Worker) child(ctx context.Context, depth int) {
-	cctx, sp := w.tracer.Start(ctx, fmt.Sprintf("worker.%d.child.%d", w.ID, depth))
+func (w *Worker) child(ctx context.Context, maxDepth, riskyAtDepth int) {
+	cctx, sp := w.tracer.Start(ctx, fmt.Sprintf("worker.%d.child.%d", w.ID, maxDepth))
 	sl := time.Duration(rand.Int63n(w.Config.MaxSpanLength.Milliseconds())) * time.Millisecond
+	if w.Config.MaxExtraAttributes > 0 {
+		a := rand.Intn(w.Config.MaxExtraAttributes)
+		for i := 0; i <= a; i++ {
+			sp.SetAttributes(attribute.Int(fmt.Sprintf("extraAttribute-%d", i), i))
+		}
+		w.extraAttributes += a
+	}
+	if riskyAtDepth == maxDepth {
+		w.riskyAttributeDepth = riskyAtDepth
+		sp.SetAttributes(attribute.Int("risky", w.ID))
+	}
 	w.spanLength += sl
 	time.Sleep(sl)
 	defer sp.End()
-	if depth > 1 {
+	if maxDepth > 1 {
 		sp.SetAttributes(attribute.Bool("hasChildren", true))
-		sp.AddEvent("spawning child", trace.WithAttributes(attribute.Int("depth", depth)))
-		w.child(cctx, depth-1)
+		sp.AddEvent("spawning child", trace.WithAttributes(attribute.Int("maxDepth", maxDepth)))
+		w.child(cctx, maxDepth-1, riskyAtDepth)
 	}
 }
 
 func (w *Worker) reset() {
 	w.traceDepth = 0
+	w.riskyAttributeDepth = 0
+	w.extraAttributes = 0
 	w.spanLength = 0
 	w.coolDown = 0
 	w.startT = time.Time{}
