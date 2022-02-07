@@ -1,0 +1,16 @@
+# This benchmark is based on the `basic-50` plan, but different in that it immediatly scales to 5000 workers and without scaling further.
+# It takes 30 minutes to complete. This uses benchd's step mode to sustain a load statically.
+# Running this benchmark should keep the collector running at a constant 90% CPU utilization and about 40% memory usage.
+name: "basic-50-sustain"
+duration: 30m
+benchConfig:
+  steps:
+  - duration: "1s" # This duration has no meaning here because there is only one step to execute.
+    numberWorkers: 5000
+  workerConfig:
+    maxCoolDown: "1s"
+    maxNumberSpans: 100
+    maxSpanLength: 100ms
+    maxTraceDepth: 10
+    receiveTimeout: 10s
+    sendTimeout: 10s

@@ -6,7 +6,7 @@
 # 3000 Workers ~= 96% CPU load and 55% memory usage
 
 name: "basic-50"
-duration: 10m
+duration: 20m
 benchConfig:
   fixedRate:
     duration: "1s"
