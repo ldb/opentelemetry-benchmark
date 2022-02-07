@@ -10,12 +10,12 @@
 # 2200 Workers ~= 90% CPU load and 40% memory usage
 # 3000 Workers ~= 96% CPU load and 55% memory usage
 
-name: "basic-50-sustain-30"
+name: "basic-50-sustain"
 duration: 30m
 benchConfig:
   steps:
   - duration: "1s" # This duration has no meaning here because there is only one step to execute.
-    numberWorkers: 2000
+    numberWorkers: 3000
   workerConfig:
     maxCoolDown: "1s"
     maxNumberSpans: 100

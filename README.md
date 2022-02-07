@@ -105,6 +105,7 @@ By default, it is provisioned with the `basic-1` configuration*
 
 Each Benchmark is described in a *plan file* that can be found under `./plans`. 
 Note that a plan should only be run if the matching OpenTelemetry config (check the prefix) has been deployed.
+To apply a different configuration, provide the respectie configuration name to the `sut_config_file` Terraform variable in `terraform/variables.tf`.
 
 ### promdl
 
@@ -135,3 +136,23 @@ It is well suited for making an initial assessment on the infrastructure (e.g ve
 The former two models are to answer the question of sensible deployment practices for an expected workload. They are of mere exploratorive nature.  
 The latter two models iterate on these results and try to answer the question on how different features used in the collector affect its performance.  
 We expect the mutating benchmark plans to perform worse (as additionatl computations and mutations take place), while the sampled workloads should perform better in sending (more sent traces), and similarly or slightly worse in receiving (some traces are sampled, so receiving will time out).
+
+## Analysis
+
+For our analysis we want to look at several qualities:
+- Maximum throughput without causing any errors during sending or receiving (the sample plans are a special case here, more blow).
+- Sustained maximum throuphut; based on the previous results we configure the benchmark to run at maximum throttle for 30 minutes
+      - Here we are especially interested in the following metrics:
+            - CPU and Memory usage of the collector during this time. Is it stable?
+            - Roundtrip time latency (in 50th, 90th, 95th, 99th percentile)
+            - How may traces is benchd emitting? How many spans is the collector accepting?
+- How does the usage of processors such as mutations or sampling change these metrics?
+
+Figures to make:
+- For -50 plans:
+      - number of clients, moving average of send rate of traces and accepted spans
+      - sending rate, moving average of send latency in different percentiles
+      - sending rate, moving average of receive latency in percentiles
+- For -sustain plans:
+      - one plot with all plans sending rates to compare throuhput
+      - sending rate, moving average of receive latency in percentiles

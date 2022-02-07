@@ -1,7 +1,5 @@
 # A "basic" plan with ~all~ most parameters set to 1...
 # It runs for 30 minutes, creating 10 workers every 1 second which send 1 span of max length 1 second every 1 second ...
-# This test is meant to compare against the self-published Benchmarking results the authors of OpenTelemetry Collector put out:
-# https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/performance.md
 name: "basic-1-compare"
 duration: 30m
 benchConfig:

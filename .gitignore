@@ -3,6 +3,7 @@ privatekey.pem
 results/*
 bin/*
 terraform/tfplan
+.vscode/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,terraform,jetbrains+all,macos,linux
