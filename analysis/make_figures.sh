@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "\033[0;36m THIS WILL NOW TAKE A WHILE...\033[0m"
+printf "\033[0;36m THIS WILL NOW TAKE A WHILE...\033[0m\n"
 
 # basic-1-verify
 cat results/basic-1-verify/log* | python3 analysis/benchd_number_clients_send_rate.py &

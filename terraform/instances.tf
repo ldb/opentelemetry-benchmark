@@ -33,7 +33,7 @@ resource "google_compute_instance" "otel-collector" {
     ssh-keys = "benchmark:${replace(tls_private_key.ssh_key.public_key_openssh, "\n", "")} benchmark"
   }
 
-  metadata_startup_script = templatefile("${path.module}/scripts/init-collector.sh",{
+  metadata_startup_script = templatefile("${path.module}/scripts/init-collector.sh", {
     config_file = templatefile("${path.module}/${var.sut_config_file}", {
       client_ip = google_compute_instance.clients.0.network_interface.0.network_ip
     })
@@ -141,9 +141,9 @@ resource "google_compute_instance" "monitoring" {
   metadata_startup_script = templatefile("${path.module}/scripts/init-monitoring.sh.tmpl", {
     client-addresses  = google_compute_instance.clients[*].network_interface.0.network_ip,
     collector-address = google_compute_instance.otel-collector.network_interface.0.network_ip,
-    zone = "europe-west1-b"
-    project = "opentelemetry-benchmark"
-    replacement = "$${1}:9100"
+    zone              = "europe-west1-b"
+    project           = "opentelemetry-benchmark"
+    replacement       = "$${1}:9100"
   })
 
   service_account {

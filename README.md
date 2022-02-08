@@ -201,3 +201,13 @@ make figures
 
 All preprocessing is done in the Python scripts. In order to speed up computation, a local cache file will be generated under `results/analysis_cache` for heavy processing steps.  
 Remove this file (for example by running `make clean`) to reprocess results (for example after making a change in the plan).
+
+Nevertheless, generating the files is very compute intensive. I am not a good Python programmer and don't know all the efficient ways to do things there.
+Sorry for the wasted cycles.
+
+After everything was generated you should have 27 local figures, that each contain the name of the plan they were generated with and what they depict.
+
+## Cleaning up
+
+After each run, it is advisable to run `make clean`. This tears down the infrastructure completely and remove all local artifacts (except the already saved benchmarking results).
+This guarantees a fresh environment for each plan.
