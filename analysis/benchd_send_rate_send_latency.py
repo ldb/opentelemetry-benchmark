@@ -106,7 +106,7 @@ fig, ax = pyplot.subplots(sharex=True, sharey=False, figsize=figsize)
 formatter = mpl.ticker.FuncFormatter(lambda s, x: datetime.utcfromtimestamp(s).strftime('%M:%S'))
 ax.xaxis.set_major_formatter(formatter)
 ax.set_xlabel("Runtime in minutes")
-ax.set_title("\"" + title + "\" Sending rate and sending latency")
+ax.set_title("\"" + title + "\" Sending rate and send latency")
 
 c = list(clients.values())
 ax.plot(list(rate.keys())[9:-10], rate_mean, color="orange", label="traces/s")
