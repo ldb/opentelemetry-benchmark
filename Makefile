@@ -5,11 +5,17 @@ help: ## Lists the available commands.
 .PHONY: all
 all: compile provision dashboard ## Compiles binaries, provisions all infrastructure and starts Grafana Dashbaord.
 
+.PHONY: figures
+figures: ## Analyse all results and generates figures. WARNING: This is CPU intensive, but can be parallelised. Consider running on a machine with multiple cores.
+	./analysis/make_figures.sh
+
 .PHONY: clean
-clean: ## Remove build artifacts.
-	docker-compose down;
+clean: ## Remove build artifacts. This will NOT remove your result files of previous runs.
 	cd terraform; terraform apply -auto-approve -destroy; rm tfplan; cd ..;
 	rm -rf bin;
+	rm benchd*.png;
+	rm results/analysis_cache;
+	docker-compose down;
 
 .PHONY: rebuild
 rebuild: clean all ## Tear down and bring everything back up.

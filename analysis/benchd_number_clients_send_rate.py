@@ -1,16 +1,9 @@
-from cProfile import label
 import math
-from datetime import datetime, time, timedelta
-from turtle import color
+from datetime import datetime
 import matplotlib as mpl
 from matplotlib import pyplot
 import fileinput
-from matplotlib import style
-import matplotlib.dates as md
-import matplotlib.ticker as ticker
-from ipaddress import *
 import numpy as np
-import matplotlib.dates as matdates
 
 # This script plots the number of active workers in benchd and the rate of successfully sent traces (resampled to RESAMPLE_SECONDS) per second over time.
 # Resampling is done by taking the average of all values in the resample period.
@@ -18,9 +11,7 @@ import matplotlib.dates as matdates
 # Y Axis: #clients
 # Y2 Axis: traces sent per second
 
-# RESAMPLE_SECONDS describes how much data should be resampled to reduce the noise.
-# For resampling, all timestamps will be rounded UP to the nearest RESAMPLE_SECONDS seconds.
-RESAMPLE_SECONDS = 30
+RESAMPLE_SECONDS = 1
 
 def figureSize(width, fraction=1):
     # Set aesthetic figure dimensions to avoid scaling in latex
@@ -32,22 +23,21 @@ def figureSize(width, fraction=1):
     fig_height_in = fig_width_in * golden_ratio
     return fig_width_in, fig_height_in
 
-# Simple Moving Average
-def movingAverage(N,list):
-    padded = np.pad(list, (N // 2, N - 1 - N // 2), mode='edge')
-    smooth = np.convolve(padded, np.ones((N,)) / N, mode='valid')
-    return smooth
-
 # Resampling
 def resample(x, seconds):
     return int(math.ceil(x / float(seconds))) * seconds
 
+# https://stackoverflow.com/questions/13728392/moving-average-or-running-mean
+def running_mean(x, N):
+    cumsum = np.cumsum(np.insert(x, 0, 0)) 
+    return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 clients = {}
 rate ={}
 first = -1
 firstError = -1
 title = ""
+
 
 # example: W basic-50 16:50:02.869689 0 0 0 0 0 0 0 -62135596800000 -62135596800000 -62135596800000 -62135596800000 0
 for line in fileinput.input():
@@ -60,8 +50,9 @@ for line in fileinput.input():
     if title == "":
         title = name
 
-    timestamp = datetime.strptime(ts, '%H:%M:%S.%f')
-    s = resample(timestamp.timestamp(), RESAMPLE_SECONDS)
+    timestamp = datetime.strptime(ts, '%H:%M:%S.%f').timestamp()
+
+    s = resample(timestamp, RESAMPLE_SECONDS)
     if first == -1:
         first = s
     seconds = s - first
@@ -69,13 +60,18 @@ for line in fileinput.input():
         clients[seconds] = 0
     if rate.get(seconds) is None:
         rate[seconds] = 0
+        #rateMA[seconds] = 0                
 
     if statusCode == '0': # Started worker
         clients[seconds] += 1
-    elif statusCode == '1': # Suuccessfully sent a trace
-        rate[seconds] += 1
+    elif statusCode == '1': # Successfully sent a trace
+        rate[seconds] += 1 / RESAMPLE_SECONDS # Evenly distribute the values over the RESAMPLE_SECONDS period.
+        #Here, avg is (1 / #buckets) where #buckets is the number of buckets used for the moving average calculation.
+        #rateMA[seconds] += avg / RESAMPLE_SECONDS
     elif statusCode in ['2', '3','4'] and firstError == -1: # Any kind of error
-        firstError = timestamp.timestamp() - first
+        firstError = timestamp - first
+
+rate_mean = running_mean( np.array(list(rate.values())), 10)
 
 
 # SIZES FOR PAPER
@@ -111,12 +107,14 @@ ax.set_ylabel("Active workers", color="blue")
 c = list(clients.values())
 ax.plot(rate.keys(), [sum(c[:y]) for y in range(1, len(c) + 1)], color="blue", label="Active workers", marker="*")
 ax2 = ax.twinx()
-ax2.plot(rate.keys(), [r / RESAMPLE_SECONDS for r in list(rate.values())], color="orange", label="traces/s", marker="x")
+ax2.plot(list(rate.keys())[4:-5] ,list(rate_mean), color="orange", label="traces/s", marker="") 
+#ax2.plot(rateMA.keys(),  list(rateMA.values()), color="green", label="traces/s", marker="x") # Uncomment to see the values with moving average
 ax2.set_ylabel("traces/s", color="orange")
 
 ax.axvline(x=firstError, color='red',linestyle="dotted")
 
-pyplot.xticks(np.arange(min(rate.keys()), max(rate.keys())+1, 120))
+#pyplot.xticks(np.arange(min(rate.keys()), max(rate.keys())+1, 120))
 
 fig.tight_layout()
-pyplot.show()
+#pyplot.show()
+pyplot.savefig("benchd_"+title+"_number_clients_send_rate.png")

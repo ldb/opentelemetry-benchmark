@@ -4,6 +4,8 @@ results/*
 bin/*
 terraform/tfplan
 .vscode/*
+benchd*.png
+results/analysis_cache
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go,terraform,jetbrains+all,macos,linux
