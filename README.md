@@ -27,7 +27,7 @@ The following diagram illustrates the architecture for this tool:
 
 The following diagram provides a deeper look into the operations of `benchd`:
 
-![benchd Architecture](doc/benchd.png)
+![benchd Architecture](doc/architecture_benchd.png)
 
 `benchd` consists of four components:
 - **`scheduler`** receives benchmark plans from `benchd` and configures the `workerManager` accordingly. During the run it is responsible for continously updating `workerManager` with new configurations, as well as stopping the run.
