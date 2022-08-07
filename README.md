@@ -1,6 +1,8 @@
 # opentelemetry-benchmark
 A benchmarking tool for the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector).
 
+You can read more about this project, including a full analysis on [my website](https://leobecker.net/posts/benchmarking-opentelemetry/).
+
 ## About
 
 This project contains all the code necessary to perform sophisticated maximum throughput benchmarks of the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector).
