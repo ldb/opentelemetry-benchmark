@@ -12,6 +12,30 @@ Some features:
 - Includes Prometheus based monitoring of all components, namely the collector, the benchmarking daemon and Prometheus itself
 - Local Grafana Dashboard to easily monitor the components without having to analyze the log files
 
+## Architecture
+
+The following diagram illustrates the architecture for this tool:
+
+![System Architecture](doc/architecture.png)
+
+- **`benchctl`** is responsible for parsing _benchmark plans_, which describe a certain workload profile. It also downloads the benchmark logs after a full benchmark run.
+- **`benchd`** is the heart of the operation. It generates the load (OpenTelemetry Traces), according to the benchmarking plan and sends them to the OpenTelemetry Collector ("OtelCol").
+- **OtelCol** is the OpenTelemetry collector. It is configured to return all received traces to `benchd`, where the latency and correct mutation of data is collected and logged.
+- **Prometheus** continously monitors `benchd` and the collector collect system level resource metrics of both systems.
+- **Grafana** is used to provide a live overview of all components to verify no bottlnecks occur during a run.
+- **`promdl`** downloads the collected metrics from Prometheus for later analysis.
+
+The following diagram provides a deeper look into the operations of `benchd`:
+
+![benchd Architecture](doc/benchd.png)
+
+`benchd` consists of four components:
+- **`scheduler`** receives benchmark plans from `benchd` and configures the `workerManager` accordingly. During the run it is responsible for continously updating `workerManager` with new configurations, as well as stopping the run.
+- **`workerManager`** creates and manages the individual `workers`. It is also responsible for notifying each worker of a response received from the OpenTelemetry Collector.
+- **`workers`** produce trace pseudorandom trace data according to the benchmarking plan. Then, they send the traces to the OpenTelemetry collector and wait for a response notification from `workerManager`.
+- **`receiver`** listens for incoming traces that are returned from the OpenTelemetry Collector. It also verifies that the incoming data.
+
+
 ### Directory structure
 
 The project is layed out as follows:
